@@ -27,10 +27,10 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().order_by('id') # Ordered for stable pagination
     serializer_class = ProductSerializer
     # Security: Default to Authenticated, or AllowAny if this is a public demo
-    # permission_classes = [permissions.IsAuthenticated] 
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
 
 class SaleViewSet(viewsets.ModelViewSet):
     # Performance: Fetch related product in single query
     queryset = Sale.objects.select_related('product').all().order_by('-sale_date')
     serializer_class = SaleSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
