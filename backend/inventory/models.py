@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
@@ -17,18 +18,23 @@ class Sale(models.Model):
     sale_date = models.DateField(auto_now_add=True, db_index=True)
 
     def save(self, *args, **kwargs):
-        if not self.pk: # Only on creation
-            if self.quantity > self.product.current_stock:
-                raise ValidationError(f"Insufficient stock for product {self.product.sku}. Requested: {self.quantity}, Available: {self.product.current_stock}")
-            
-            # Calculate total price
-            self.total_price = self.product.price * self.quantity
-            
-            # Decrement stock
-            self.product.current_stock -= self.quantity
-            self.product.save()
-            
+        if not self.pk:
+            with transaction.atomic():
+                # Lock row to prevent race conditions
+                product = Product.objects.select_for_update().get(pk=self.product_id)
+                
+                if self.quantity > product.current_stock:
+                    raise ValidationError(
+                        f"Stock insufficient for {product.sku}. Needs {self.quantity}, has {product.current_stock}"
+                    )
+                
+                self.total_price = product.price * self.quantity
+                
+                # Update stock
+                product.current_stock -= self.quantity
+                product.save()
+                
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Sale: {self.product.sku} - {self.quantity} items"
+        return f"Sale: {self.product.sku} - {self.quantity}"
