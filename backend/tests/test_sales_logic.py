@@ -34,10 +34,15 @@ class TestSalesLogic:
         assert resp.status_code == 400
         assert "Stock insufficient" in str(resp.data)
 
-    def test_forecast_api_resilience(self):
-        # Even with no sales data, API should not crash
-        url = reverse('sales-forecast', args=[self.product.id])
-        resp = self.client.get(url)
+    def test_advanced_forecast_api_resilience(self):
+        """Test that forecast endpoint handles products with insufficient data gracefully"""
+        url = reverse('advanced_predict')
+        resp = self.client.post(url, {
+            'product_id': self.product.id,
+            'days': 7,
+            'model': 'auto'
+        }, format='json')
         
-        assert resp.status_code == 200
-        assert resp.data['forecast_next_day'] == 0.0
+        # Should return 400 with insufficient data message (not crash)
+        assert resp.status_code == 400
+        assert 'insufficient' in resp.data.get('error', '').lower() or 'data' in resp.data.get('error', '').lower()

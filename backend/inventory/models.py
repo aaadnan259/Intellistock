@@ -13,10 +13,9 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name} ({self.sku})"
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['current_stock'], name='product_stock_idx'),
-        ]
+    # Note: Indexes are defined in migration 0004_add_indexes.py
+    # Do NOT duplicate here to avoid migration conflicts
+
 
 class Sale(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='sales')
@@ -50,9 +49,5 @@ class Sale(models.Model):
     def __str__(self):
         return f"Sale: {self.product.sku} - {self.quantity}"
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['sale_date'], name='sale_date_idx'),
-            models.Index(fields=['product', 'sale_date'], name='sale_prod_date_idx'),
-            models.Index(fields=['sale_date', 'quantity'], name='sale_date_qty_idx'),
-        ]
+    # Note: Indexes are defined in migration 0004_add_indexes.py
+    # Do NOT duplicate here to avoid migration conflicts

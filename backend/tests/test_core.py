@@ -132,13 +132,18 @@ class TestAnalytics:
         url = reverse('analytics-health')
         response = self.client.get(url)
         assert response.status_code == status.HTTP_200_OK
-        assert 'health_score' in response.data
+        # Fixed: API returns 'score' not 'health_score'
+        assert 'score' in response.data
+        assert 'grade' in response.data
+        assert 'factors' in response.data
 
     def test_top_products(self):
         """Test top products endpoint."""
         url = reverse('analytics-top-products')
         response = self.client.get(url)
         assert response.status_code == status.HTTP_200_OK
+        # Should return a list
+        assert isinstance(response.data, list)
 
 
 @pytest.mark.django_db
@@ -177,3 +182,24 @@ class TestForecasting:
         assert 'forecast' in response.data
         assert 'metrics' in response.data
         assert 'model_used' in response.data
+        
+    def test_forecast_with_insufficient_data(self):
+        """Test forecast fails gracefully with insufficient data."""
+        # Create product with no sales
+        empty_product = Product.objects.create(
+            name="Empty Product",
+            sku="EMPTY-001",
+            price=Decimal("50.00"),
+            current_stock=100
+        )
+        
+        url = reverse('advanced_predict')
+        response = self.client.post(url, {
+            'product_id': empty_product.id,
+            'days': 7,
+            'model': 'auto'
+        }, format='json')
+        
+        # Should return 400 with helpful error message
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'error' in response.data
