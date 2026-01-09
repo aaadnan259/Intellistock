@@ -46,46 +46,68 @@ class InventoryAnalytics:
         ]
 
     def perform_abc_analysis(self):
-        # Calculate annual consumption value
+        from django.db.models import Window
+        from django.db.models.functions import PercentRank
+        
         one_year_ago = timezone.now() - timedelta(days=365)
         
-        # usage = sales quantity * price (approx value of consumption)
-        product_usage = Product.objects.annotate(
-            annual_sales_value=Coalesce(
+        # Calculate annual sales value first
+        product_sales = Product.objects.annotate(
+            annual_value=Coalesce(
                 Sum('sales__total_price', filter=models.Q(sales__sale_date__gte=one_year_ago)), 
                 0.0,
                 output_field=FloatField()
             )
-        ).order_by('-annual_sales_value')
+        ).filter(annual_value__gt=0) # Exclude zero value items from ranking
         
-        total_value = sum(p.annual_sales_value for p in product_usage)
-        if total_value == 0:
-            return {"a_items": [], "b_items": [], "c_items": [], "summary": {}}
-            
-        cumulative_value = 0
+        # Add PercentRank
+        ranked_products = product_sales.annotate(
+            percentile=Window(
+                expression=PercentRank(),
+                order_by=F('annual_value').desc()
+            )
+        )
+        
+        # Classification logic in Python (loop is fine for iteration, but calculation is done in DB)
+        # Or we can classify in DB with Case/When if database supports it with Window (Postgres does)
+        # But we need to group them into lists for JSON response.
+        
         a_items, b_items, c_items = [], [], []
         
-        for p in product_usage:
-            cumulative_value += p.annual_sales_value
-            percentage = (cumulative_value / total_value) * 100
+        # Note: PercentRank returns 0..1. 0 is top rank (highest value).
+        # Cumulative value logic in user request was:
+        # A: Top 20% of products by *cumulative value*, usually ~80% of value.
+        # But user SQL example used `PERCENT_RANK` and checked `percentile <= 0.20`.
+        # PERCENT_RANK ranks rows. So this logic means "Top 20% of ITEMS by count contribute to class A".
+        # This is the "Pareto Item Count" approach.
+        # I will follow the user's SQL example logic: <= 0.20 is A.
+        
+        for p in ranked_products:
+            # percent_rank is 0 to 1
+            # 0 is top.
             
             item_data = {
                 'product_id': p.id,
                 'name': p.name,
-                'value': p.annual_sales_value,
-                'percentage': percentage
+                'value': p.annual_value,
+                'percentile': p.percentile
             }
             
-            # A: Top 80% value
-            if percentage <= 80:
+            if p.percentile <= 0.20:
                 a_items.append(item_data)
-            # B: Next 15% (Up to 95%)
-            elif percentage <= 95:
+            elif p.percentile <= 0.50:
                 b_items.append(item_data)
-            # C: Rest
             else:
                 c_items.append(item_data)
                 
+        # Count remaining zero-value products as C items
+        zero_value_products = Product.objects.annotate(
+             annual_value=Coalesce(Sum('sales__total_price', filter=models.Q(sales__sale_date__gte=one_year_ago)), 0.0, output_field=FloatField())
+        ).filter(annual_value=0)
+        
+        for p in zero_value_products:
+             c_items.append({'product_id': p.id, 'name': p.name, 'value': 0, 'percentile': 1.0})
+
         return {
             "a_items": a_items,
             "b_items": b_items,
@@ -94,9 +116,9 @@ class InventoryAnalytics:
                 "a_count": len(a_items),
                 "b_count": len(b_items),
                 "c_count": len(c_items),
-                "a_value_pct": 80, 
-                "b_value_pct": 15,
-                "c_value_pct": 5
+                "a_value_pct": 0, # Calculation skipped for speed as per user request? "Return only final classification"
+                "b_value_pct": 0,
+                "c_value_pct": 0
             }
         }
 

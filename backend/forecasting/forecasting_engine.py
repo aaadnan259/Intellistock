@@ -20,18 +20,33 @@ class ForecastingEngine:
         self.logger = logging.getLogger(__name__)
 
     def _get_sales_df(self, product_id):
-        """Helper to fetch and aggregate sales data"""
-        sales = Sale.objects.filter(product_id=product_id).values('sale_date').annotate(total_qty=Sum('quantity')).order_by('sale_date')
-        if not sales.exists():
+        """Helper to fetch and aggregate sales data using DB aggregation for performance"""
+        from django.db.models.functions import TruncDate
+        
+        # Optimize: Aggregate at DB level to avoid loading millions of rows
+        sales_data = Sale.objects.filter(product_id=product_id)\
+            .annotate(date=TruncDate('sale_date'))\
+            .values('date')\
+            .annotate(y=Sum('quantity'))\
+            .order_by('date')
+            
+        if not sales_data.exists():
             return None
         
-        df = pd.DataFrame(sales)
-        df['sale_date'] = pd.to_datetime(df['sale_date'])
-        df = df.set_index('sale_date')
-        # Resample to daily frequency and fill missing dates with 0
-        df = df.resample('D').sum().fillna(0)
-        df = df.reset_index()
-        df.columns = ['ds', 'y'] # Prophet format
+        df = pd.DataFrame(list(sales_data))
+        # Rename date to ds for Prophet
+        df.rename(columns={'date': 'ds'}, inplace=True)
+        
+        # Ensure regex/types
+        df['ds'] = pd.to_datetime(df['ds'])
+        df = df.set_index('ds')
+        
+        # Fill missing dates
+        if not df.empty:
+            idx = pd.date_range(start=df.index.min(), end=df.index.max(), freq='D')
+            df = df.reindex(idx, fill_value=0)
+            df = df.reset_index().rename(columns={'index': 'ds'})
+            
         return df
 
     def analyze_product_data(self, product_id):

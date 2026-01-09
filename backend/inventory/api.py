@@ -24,7 +24,8 @@ class SaleSerializer(serializers.ModelSerializer):
 
 class ProductViewSet(viewsets.ModelViewSet):
     # Pagination is handled via REST_FRAMEWORK settings (StandardResultsSetPagination)
-    queryset = Product.objects.all().order_by('id') # Ordered for stable pagination
+    # Optimized: Prefetch sales to prevent N+1 queries when accessing sales history
+    queryset = Product.objects.prefetch_related('sales').all().order_by('id')
     serializer_class = ProductSerializer
     # Security: Default to Authenticated, or AllowAny if this is a public demo
     permission_classes = [permissions.IsAuthenticatedOrReadOnly] 

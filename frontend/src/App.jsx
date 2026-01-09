@@ -4,6 +4,8 @@ import Dashboard from './components/Dashboard';
 import ProductTable from './components/ProductTable';
 import ForecastingPage from './components/ForecastingPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import ErrorBoundary from './components/ErrorBoundary';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState('#dashboard');
@@ -36,9 +38,12 @@ function App() {
   };
 
   return (
-    <Layout>
-      {renderContent()}
-    </Layout>
+    <ErrorBoundary>
+      <Toaster position="top-right" />
+      <Layout>
+        {renderContent()}
+      </Layout>
+    </ErrorBoundary>
   );
 }
 
