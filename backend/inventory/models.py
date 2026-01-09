@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
@@ -15,7 +16,7 @@ class Sale(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='sales')
     quantity = models.PositiveIntegerField()
     total_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True)
-    sale_date = models.DateField(auto_now_add=True, db_index=True)
+    sale_date = models.DateField(default=timezone.now, db_index=True)
 
     def save(self, *args, **kwargs):
         if not self.pk:

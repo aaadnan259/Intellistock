@@ -4,10 +4,10 @@ import random
 from datetime import timedelta
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'intellistock.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from inventory.models import Product, Sale, Order
+from inventory.models import Product, Sale
 
 def seed():
     print("Seeding data...")
