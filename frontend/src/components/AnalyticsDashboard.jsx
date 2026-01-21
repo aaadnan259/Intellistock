@@ -84,7 +84,7 @@ const AnalyticsDashboard = () => {
                                     dataKey="value"
                                 >
                                     {abcData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                                        <Cell key={entry.name || `unknown-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                                     ))}
                                 </Pie>
                                 <Tooltip

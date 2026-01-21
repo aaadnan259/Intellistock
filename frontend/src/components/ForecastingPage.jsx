@@ -27,13 +27,9 @@ const ForecastingPage = () => {
         loadProducts();
     }, []);
 
-    useEffect(() => {
-        if (selectedProduct) {
-            runForecast();
-        }
-    }, [selectedProduct, days]);
+    const runForecast = React.useCallback(async () => {
+        if (!selectedProduct) return;
 
-    const runForecast = async () => {
         setLoading(true);
         try {
             const res = await forecastingApi.predict({
@@ -58,7 +54,13 @@ const ForecastingPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedProduct, days]);
+
+    useEffect(() => {
+        if (selectedProduct) {
+            runForecast();
+        }
+    }, [runForecast, selectedProduct]);
 
     return (
         <div className="space-y-6 animate-fade-in">
