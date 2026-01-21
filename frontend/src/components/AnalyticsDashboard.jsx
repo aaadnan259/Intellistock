@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download, Filter } from 'lucide-react';
 import { inventoryApi } from '../services/api';
+import { BentoGrid, BentoItem } from './BentoGrid';
 
 const AnalyticsDashboard = () => {
     const [abcData, setAbcData] = useState([]);
@@ -47,32 +48,38 @@ const AnalyticsDashboard = () => {
     const COLORS = ['#3B82F6', '#8B5CF6', '#F97316', '#10B981'];
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <h2 className="text-3xl font-bold text-white tracking-tight">Analytics & Reports</h2>
+                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    Analytics & Reports
+                </h2>
                 <div className="flex gap-2">
                     <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white transition-colors">
                         <Filter size={16} /> Filters
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-blue-600 transition-colors shadow-lg shadow-primary/20">
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
                         <Download size={16} /> Export
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <BentoGrid>
                 {/* ABC Analysis - Pie Chart */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                    <h3 className="text-lg font-bold text-white mb-6">ABC Inventory Analysis</h3>
-                    <div className="h-[300px] w-full flex items-center justify-center">
+                <BentoItem
+                    colSpan={2}
+                    title="ABC Inventory Analysis"
+                    description="Pareto principle distribution (80/20 rule)"
+                    className="min-h-[400px]"
+                >
+                    <div className="h-full w-full flex items-center justify-center mt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={abcData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
+                                    innerRadius={80}
+                                    outerRadius={100}
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
@@ -81,19 +88,23 @@ const AnalyticsDashboard = () => {
                                     ))}
                                 </Pie>
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC', borderRadius: '8px' }}
+                                    contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC', borderRadius: '12px' }}
                                     itemStyle={{ color: '#F8FAFC' }}
                                 />
                                 <Legend horizontalAlign="right" verticalAlign="middle" layout="vertical" iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
-                </div>
+                </BentoItem>
 
                 {/* Profit Margin Analysis - Bar Chart */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                    <h3 className="text-lg font-bold text-white mb-6">Revenue vs Profit</h3>
-                    <div className="h-[300px] w-full">
+                <BentoItem
+                    colSpan={2}
+                    title="Revenue vs Profit"
+                    description="Monthly financial performance"
+                    className="min-h-[400px]"
+                >
+                    <div className="h-full w-full mt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyPerformance}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
@@ -101,7 +112,7 @@ const AnalyticsDashboard = () => {
                                 <YAxis stroke="#64748B" tickLine={false} axisLine={false} dx={-10} />
                                 <Tooltip
                                     cursor={{ fill: '#1E293B', opacity: 0.5 }}
-                                    contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC' }}
+                                    contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC', borderRadius: '12px' }}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                 <Bar dataKey="revenue" name="Revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} />
@@ -109,8 +120,8 @@ const AnalyticsDashboard = () => {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-                </div>
-            </div>
+                </BentoItem>
+            </BentoGrid>
         </div>
     );
 };

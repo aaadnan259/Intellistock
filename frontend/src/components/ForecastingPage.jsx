@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Target, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import ForecastChart from './ForecastChart';
 import { forecastingApi, inventoryApi } from '../services/api';
+import { BentoGrid, BentoItem } from './BentoGrid';
 import toast from 'react-hot-toast';
 
 const ForecastingPage = () => {
@@ -64,56 +65,53 @@ const ForecastingPage = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Demand Forecasting</h2>
+                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Demand Forecasting</h2>
                     <p className="text-slate-400 mt-1">AI-powered demand prediction with confidence intervals.</p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-1">
-                        <button className="px-3 py-1.5 text-sm font-medium rounded text-white bg-primary shadow-sm">
-                            Items
-                        </button>
-                        <button className="px-3 py-1.5 text-sm font-medium rounded text-slate-400 hover:text-white transition-colors">
-                            Categories
-                        </button>
-                    </div>
-
                     <button
                         onClick={runForecast}
                         disabled={loading || !selectedProduct}
-                        className={`p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-primary border border-slate-700 transition-colors ${loading ? 'animate-spin' : ''}`}
+                        className={`p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-blue-400 border border-slate-700 transition-colors ${loading ? 'animate-spin' : ''}`}
                     >
                         <RefreshCw size={20} />
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <BentoGrid>
                 {/* Controls Side Panel */}
-                <div className="space-y-6">
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm">
-                        <label className="block text-sm font-medium text-slate-400 mb-2">Select Product</label>
-                        <select
-                            value={selectedProduct}
-                            onChange={(e) => setSelectedProduct(e.target.value)}
-                            className="w-full bg-slate-800 border-slate-700 rounded-lg text-white p-2.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                        >
-                            {products.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                            {products.length === 0 && <option>Loading...</option>}
-                        </select>
+                <BentoItem
+                    colSpan={1}
+                    title="Configuration"
+                    className="flex flex-col h-full"
+                >
+                    <div className="flex flex-col gap-6 mt-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-2">Select Product</label>
+                            <select
+                                value={selectedProduct}
+                                onChange={(e) => setSelectedProduct(e.target.value)}
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-lg text-white p-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                            >
+                                {products.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                                {products.length === 0 && <option>Loading...</option>}
+                            </select>
+                        </div>
 
-                        <div className="mt-6 space-y-4">
-                            <label className="block text-sm font-medium text-slate-400">Forecast Horizon</label>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-2">Forecast Horizon</label>
                             <div className="grid grid-cols-3 gap-2">
                                 {[30, 90, 365].map(d => (
                                     <button
                                         key={d}
                                         onClick={() => setDays(d)}
                                         className={`px-2 py-2 text-xs font-medium rounded border transition-colors ${days === d
-                                                ? 'border-primary bg-primary/20 text-primary'
-                                                : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-primary hover:text-primary'
+                                            ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                                            : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-blue-500 hover:text-blue-400'
                                             }`}
                                     >
                                         {d === 365 ? '1 Year' : `${d} Days`}
@@ -122,7 +120,7 @@ const ForecastingPage = () => {
                             </div>
                         </div>
 
-                        <div className="mt-8 pt-6 border-t border-slate-800 space-y-4">
+                        <div className="mt-auto pt-6 border-t border-slate-800 space-y-4">
                             <div className="flex items-start gap-3">
                                 <div className="p-2 rounded bg-emerald-500/10 text-emerald-400">
                                     <Target size={20} />
@@ -132,28 +130,19 @@ const ForecastingPage = () => {
                                     <p className="text-2xl font-mono text-white">94.2%</p>
                                 </div>
                             </div>
-
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 rounded bg-blue-500/10 text-blue-400">
-                                    <TrendingUp size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Growth Trend</p>
-                                    <p className="text-2xl font-mono text-white">+12.5%</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                </div>
+                </BentoItem>
 
                 {/* Main Chart Area */}
-                <div className="lg:col-span-3 space-y-6">
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 backdrop-blur-sm min-h-[500px]">
+                <BentoItem
+                    colSpan={3}
+                    header={
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                     {products.find(p => p.id == selectedProduct)?.name || 'Product'} Forecast
-                                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">High Confidence</span>
+                                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">High Confidence</span>
                                 </h3>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-400">
@@ -165,12 +154,16 @@ const ForecastingPage = () => {
                                 </div>
                             </div>
                         </div>
-
-                        {loading && forecastData.length === 0 ? (
-                            <div className="h-[400px] flex items-center justify-center text-slate-500">Generating forecast...</div>
-                        ) : (
-                            <ForecastChart data={forecastData} />
-                        )}
+                    }
+                >
+                    <div className="min-h-[500px] flex flex-col">
+                        <div className="flex-1">
+                            {loading && forecastData.length === 0 ? (
+                                <div className="h-full flex items-center justify-center text-slate-500">Generating forecast...</div>
+                            ) : (
+                                <ForecastChart data={forecastData} />
+                            )}
+                        </div>
 
                         <div className="mt-6 p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 flex items-start gap-3">
                             <div className="p-1">
@@ -184,8 +177,8 @@ const ForecastingPage = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </BentoItem>
+            </BentoGrid>
         </div>
     );
 };

@@ -59,21 +59,21 @@ const ProductTable = ({ limit }) => {
     }
 
     return (
-        <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm shadow-xl">
+        <div className="glass-card w-full overflow-hidden rounded-3xl border border-slate-800 shadow-xl">
             <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm">
                     <thead>
                         <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400">
-                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">
+                            <th className="px-6 py-5 font-medium uppercase tracking-wider text-xs">
                                 <div className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
                                     Product Name <ArrowUpDown size={14} />
                                 </div>
                             </th>
-                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">SKU</th>
-                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Price</th>
-                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Stock Level</th>
-                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center">Status</th>
-                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center">Actions</th>
+                            <th className="px-6 py-5 font-medium uppercase tracking-wider text-xs">SKU</th>
+                            <th className="px-6 py-5 font-medium uppercase tracking-wider text-xs text-right">Price</th>
+                            <th className="px-6 py-5 font-medium uppercase tracking-wider text-xs text-right">Stock Level</th>
+                            <th className="px-6 py-5 font-medium uppercase tracking-wider text-xs text-center">Status</th>
+                            <th className="px-6 py-5 font-medium uppercase tracking-wider text-xs text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
@@ -102,7 +102,7 @@ const ProductTable = ({ limit }) => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <button className="text-slate-500 hover:text-white transition-colors p-1 rounded hover:bg-slate-700">
+                                        <button className="text-slate-500 hover:text-blue-400 transition-colors p-2 rounded hover:bg-slate-700/50">
                                             <MoreVertical size={16} />
                                         </button>
                                     </td>
@@ -111,7 +111,7 @@ const ProductTable = ({ limit }) => {
                         })}
                         {products.length === 0 && (
                             <tr>
-                                <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                                <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                                     No products found.
                                 </td>
                             </tr>
@@ -120,20 +120,20 @@ const ProductTable = ({ limit }) => {
                 </table>
             </div>
             {!limit && (
-                <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/50 px-6 py-3 text-sm text-slate-400">
+                <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/50 px-6 py-4 text-sm text-slate-400">
                     <div>Page {page} {totalPages > 1 && `of ${totalPages}`}</div>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                             disabled={page === 1}
-                            className="px-3 py-1 rounded bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Previous
                         </button>
                         <button
                             onClick={() => setPage(p => p + 1)}
                             disabled={page >= totalPages && totalPages > 0} // simple check
-                            className="px-3 py-1 rounded bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Next
                         </button>
