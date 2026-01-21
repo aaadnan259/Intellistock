@@ -89,8 +89,9 @@ const ForecastingPage = () => {
                 >
                     <div className="flex flex-col gap-6 mt-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Select Product</label>
+                            <label htmlFor="product-select" className="block text-sm font-medium text-slate-400 mb-2">Select Product</label>
                             <select
+                                id="product-select"
                                 value={selectedProduct}
                                 onChange={(e) => setSelectedProduct(e.target.value)}
                                 className="w-full bg-slate-800/50 border border-slate-700 rounded-lg text-white p-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
