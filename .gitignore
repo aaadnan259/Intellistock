@@ -18,3 +18,8 @@ yarn-error.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Project Specific
+.agent/
+.shared/
+design-system/

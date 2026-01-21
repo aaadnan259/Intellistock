@@ -1,56 +1,56 @@
-# Intellistock - AI-Powered Inventory Management
+# Intellistock
 
-## 🎯 Project Overview
-Intellistock is a next-generation inventory management system designed for high-volume retailers. It leverages advanced machine learning to predict future demand, optimize stock levels, and provide actionable analytics. Built for scale, it handles 100K+ products with optimized database queries and caching strategies.
+A high-volume inventory management dashboard built for retailers who need to handle 100k+ products without the UI lagging. 
 
-## 🚀 Key Features
-- **Advanced Forecasting**: 
-  - Integrated **Prophet**, **ARIMA**, and **Exponential Smoothing** models.
-  - Automated model selection based on data characteristics (seasonality, trend, variance).
-  - 85%+ forecast accuracy (R² > 0.8 in tests).
-- **Real-time Analytics**:
-  - **ABC Analysis**: Classifies inventory into A, B, and C categories using Pareto principle.
-  - **Turnover Ratio**: Monitors inventory efficiency.
-  - **Slow Mover Detection**: Identifies stale stock for liquidation.
-- **Performance Optimized**:
-  - **Database**: Composite indexes and Window functions for sub-second analytics.
-  - **Caching**: Redis caching for frequently accessed dashboards.
-  - **Async Processing**: Celery + Redis for batch forecasting.
-  - **Frontend**: Optimistic UI updates, skeleton loaders, and error boundaries.
+It uses a Django backend to crunch numbers (inventory turnover, ABC analysis, slow movers) and a React frontend for the dashboard. There's also some forecasting stuff under the hood—it uses Prophet and ARIMA to guess future stock needs, but the main focus right now is just making the data accessible and the UI fast.
 
-## 🛠️ Tech Stack
-- **Backend**: Django REST Framework, PostgreSQL
-- **ML/Science**: Facebook Prophet, statsmodels, scikit-learn, pandas
-- **Task Queue**: Celery, Redis
-- **Frontend**: React, Vite, Tailwind CSS, Recharts
-- **Infrastructure**: Docker ready
+![Dashboard Preview](./dashboard-preview.png)
 
-## 📊 Performance Metrics
-- **Query Optimization**: N+1 queries eliminated in `ProductViewSet`, reducing load times by 98%.
-- **Aggregation**: Database-level aggregation (`TruncDate`, `Window` functions) handles millions of sale records without memory bloat.
-- **Response Time**: < 500ms for 10K product lists.
+## What's Inside
 
-## 🏃 Quick Start
+- **Dashboard**: A "Bento Grid" style command center. I just updated this to be fully dark mode (OLED style) because the old light mode was blinding.
+- **Forecasting**: Can switch between Prophet (better for seasonal stuff) and ARIMA. It tries to pick the best one automatically.
+- **Analytics**: 
+    - **ABC Analysis**: Breaks down which 20% of your items make 80% of your money.
+    - **Slow Movers**: Flags stuff that hasn't sold in 60+ days so you can clear it out.
+- **Optimization**: The backend uses composite indexes and window functions. It's designed to not choke when you load a list of 10,000 items.
 
-### Backend
-1. Navigate to `backend/`.
-2. Install dependencies: `pip install -r requirements.txt`.
-3. Run migrations: `python manage.py migrate`.
-4. Seed demo data: `python manage.py shell < seed_realistic_data.py`.
-5. Start server: `python manage.py runserver`.
-6. Start Celery (optional for batch): `celery -A config worker -l info`.
+## Tech Stack
 
-### Frontend
-1. Navigate to `frontend/`.
-2. Install dependencies: `npm install`.
-3. Run dev server: `npm run dev`.
+- **Backend**: Python, Django REST Framework, Celery (for the background tasks).
+- **Frontend**: React, Vite, Tailwind CSS (w/ Recharts for the graphs).
+- **Database**: PostgreSQL is the target, but runs fine on SQLite for dev.
 
-## 📈 ML Model Logic
-The forecasting engine automatically selects the best model:
-- **Prophet**: Chosen for data with strong seasonality (>0.3 score).
-- **ARIMA**: Chosen for clear trends with low variance.
-- **Exponential Smoothing**: Fallback for high variability data.
-- **Ensemble**: Averages all models for balanced datasets.
+## How to Run It
 
-## 👨‍💻 Author
-Developed by Adnan Ashraf (https://github.com/aaadnan259).
+### 1. Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+*(Optional) If you want the forecasting tasks to actually run in the background, you'll need Redis running and start a Celery worker.*
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Go to `http://localhost:5173`.
+
+## Notes
+
+- The default login for the admin panel (if you seeded data) is usually `admin` / `admin`.
+- If the dashboard looks empty, run `python manage.py shell < seed_realistic_data.py` in the backend folder to generate some dummy sales data.
+
+## Author
+
+Adnan Ashraf

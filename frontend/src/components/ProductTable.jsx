@@ -1,234 +1,145 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, ArrowUpDown, ChevronUp, ChevronDown, Loader2, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
-import api from '../services/api';
-import Sparkline from './Sparkline';
+import React, { useState, useEffect } from 'react';
+import { MoreVertical, ArrowUpDown } from 'lucide-react';
+import { inventoryApi } from '../services/api';
 
-const ProductTable = () => {
+const ProductTable = ({ limit }) => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All');
-    const [sortConfig, setSortConfig] = useState({ key: 'sku', direction: 'asc' });
-    const [forecastingIds, setForecastingIds] = useState(new Set());
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await api.get('/inventory/products/');
-                setProducts(response.data);
-            } catch (error) {
-                console.error('Failed to fetch products', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchProducts();
-    }, []);
+    }, [limit, page]);
 
-    const handleSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const handleForecastInfo = async (productId) => {
-        setForecastingIds(prev => new Set(prev).add(productId));
+    const fetchProducts = async () => {
         try {
-            const response = await api.post(`/forecasting/predict/${productId}/`);
-            // Update the product with the new forecast data
-            setProducts(prevProducts => prevProducts.map(p =>
-                p.id === productId ? { ...p, forecast: response.data } : p
-            ));
-        } catch (error) {
-            console.error("Forecast failed", error);
-        } finally {
-            setForecastingIds(prev => {
-                const next = new Set(prev);
-                next.delete(productId);
-                return next;
+            setLoading(true);
+            const response = await inventoryApi.getProducts({
+                limit: limit || 10, // Assuming backend supports limit/offset or similar
+                page: page
             });
+            // Handle Django Rest Framework pagination format if applicable (results/count) or direct array
+            const data = response.data.results || response.data;
+            setProducts(Array.isArray(data) ? data : []);
+
+            if (response.data.count && limit) {
+                setTotalPages(Math.ceil(response.data.count / limit));
+            }
+        } catch (error) {
+            console.error("Failed to fetch products:", error);
+            // Fallback empty or mock if needed, for now just empty
+        } finally {
+            setLoading(false);
         }
     };
 
-    const filteredAndSortedProducts = useMemo(() => {
-        let result = [...products];
+    const getStatusColor = (status) => {
+        // Map backend status or logic to colors
+        if (!status) return 'bg-slate-500/10 text-slate-400 border-slate-500/20'; // default
 
-        // Filter by search
-        if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
-            result = result.filter(p =>
-                p.name.toLowerCase().includes(lowerQuery) ||
-                p.sku.toLowerCase().includes(lowerQuery)
-            );
-        }
+        const s = status.toLowerCase();
+        if (s === 'in stock') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        if (s === 'low stock') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        if (s === 'out of stock') return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+        if (s === 'critical') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    };
 
-        // Filter by status
-        if (statusFilter !== 'All') {
-            result = result.filter(p => {
-                if (statusFilter === 'Low Stock') return p.current_stock > 0 && p.current_stock < 10;
-                if (statusFilter === 'Out of Stock') return p.current_stock === 0;
-                return true;
-            });
-        }
+    // Helper to determine status if not provided directly
+    const ensureStatus = (product) => {
+        if (product.status) return product.status;
+        if (product.stock_quantity === 0) return 'Out of Stock';
+        if (product.stock_quantity < 20) return 'Low Stock'; // Arbitrary threshold
+        return 'In Stock';
+    };
 
-        // Sort
-        if (sortConfig.key) {
-            result.sort((a, b) => {
-                let aValue = a[sortConfig.key];
-                let bValue = b[sortConfig.key];
-                if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-                if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-
-                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        return result;
-    }, [products, searchQuery, statusFilter, sortConfig]);
-
-    if (loading) {
-        return (
-            <div className="flex h-64 w-full items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-            </div>
-        );
+    if (loading && products.length === 0) {
+        return <div className="p-8 text-center text-slate-500">Loading inventory...</div>;
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-2xl font-bold text-slate-800">Inventory Management</h2>
-
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by SKU or Name..."
-                            className="w-full rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-64"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <select
-                            className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-8 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-40"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option>All</option>
-                            <option>Low Stock</option>
-                            <option>Out of Stock</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    </div>
-                </div>
-            </div>
-
-            <div className="overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200">
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1000px]">
-                        <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            <tr>
-                                <th className="group cursor-pointer px-6 py-4 text-left hover:bg-slate-100" onClick={() => handleSort('sku')}>
-                                    <div className="flex items-center gap-1">
-                                        SKU
-                                        <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-                                    </div>
-                                </th>
-                                <th className="group cursor-pointer px-6 py-4 text-left hover:bg-slate-100" onClick={() => handleSort('name')}>
-                                    <div className="flex items-center gap-1">
-                                        Product Name
-                                        <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-                                    </div>
-                                </th>
-                                <th className="group cursor-pointer px-6 py-4 text-left hover:bg-slate-100" onClick={() => handleSort('price')}>
-                                    <div className="flex items-center gap-1">
-                                        Price
-                                        <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-                                    </div>
-                                </th>
-                                <th className="group cursor-pointer px-6 py-4 text-left hover:bg-slate-100" onClick={() => handleSort('current_stock')}>
-                                    <div className="flex items-center gap-1">
-                                        Stock
-                                        <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-                                    </div>
-                                </th>
-                                <th className="px-6 py-4 text-left">7-Day Trend</th>
-                                <th className="px-6 py-4 text-left">Forecast</th>
-                                <th className="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
-                            {filteredAndSortedProducts.length > 0 ? (
-                                filteredAndSortedProducts.map((product) => (
-                                    <tr key={product.id} className="transition-colors hover:bg-slate-50">
-                                        <td className="px-6 py-4 font-mono text-xs text-slate-500">{product.sku}</td>
-                                        <td className="px-6 py-4 font-bold text-slate-900">{product.name}</td>
-                                        <td className="px-6 py-4">${product.price.toFixed(2)}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${product.current_stock === 0 ? 'bg-red-100 text-red-800' :
-                                                    product.current_stock < 10 ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-green-100 text-green-800'
-                                                }`}>
-                                                {product.current_stock} units
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <Sparkline data={product.sales_history || []} color={product.forecast?.trend === 'down' ? '#ef4444' : '#10b981'} />
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {product.forecast ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold">{product.forecast.value}</span>
-                                                    {product.forecast.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                                                    {product.forecast.trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
-                                                    {product.forecast.trend === 'stable' && <ArrowRight className="h-4 w-4 text-slate-400" />}
-                                                </div>
-                                            ) : (
-                                                <span className="text-slate-400 text-xs">No data</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleForecastInfo(product.id); }}
-                                                disabled={forecastingIds.has(product.id)}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
-                                            >
-                                                {forecastingIds.has(product.id) ? (
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                ) : (
-                                                    <TrendingUp className="h-3 w-3" />
-                                                )}
-                                                Forecast
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <div className="bg-slate-50 p-4 rounded-full mb-3">
-                                                <Search className="h-6 w-6 text-slate-400" />
-                                            </div>
-                                            <h3 className="text-lg font-medium text-slate-900">No products found</h3>
-                                            <p className="text-slate-500 max-w-xs mx-auto mt-1">Try adjusting your search criteria or filter to find what you're looking for.</p>
-                                        </div>
+        <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm shadow-xl">
+            <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left text-sm">
+                    <thead>
+                        <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400">
+                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">
+                                <div className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+                                    Product Name <ArrowUpDown size={14} />
+                                </div>
+                            </th>
+                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">SKU</th>
+                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Price</th>
+                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Stock Level</th>
+                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center">Status</th>
+                            <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                        {products.map((product) => {
+                            const status = ensureStatus(product);
+                            return (
+                                <tr
+                                    key={product.id}
+                                    className="group hover:bg-slate-800/40 transition-colors duration-150"
+                                >
+                                    <td className="px-6 py-4 font-medium text-white">
+                                        {product.name}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-400 font-mono text-xs">
+                                        {product.sku || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-200 font-mono text-right">
+                                        ${Number(product.price).toFixed(2)}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-200 font-mono text-right">
+                                        {product.stock_quantity} units
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${getStatusColor(status)}`}>
+                                            {status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <button className="text-slate-500 hover:text-white transition-colors p-1 rounded hover:bg-slate-700">
+                                            <MoreVertical size={16} />
+                                        </button>
                                     </td>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            );
+                        })}
+                        {products.length === 0 && (
+                            <tr>
+                                <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
+                                    No products found.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
+            {!limit && (
+                <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/50 px-6 py-3 text-sm text-slate-400">
+                    <div>Page {page} {totalPages > 1 && `of ${totalPages}`}</div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="px-3 py-1 rounded bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            onClick={() => setPage(p => p + 1)}
+                            disabled={page >= totalPages && totalPages > 0} // simple check
+                            className="px-3 py-1 rounded bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

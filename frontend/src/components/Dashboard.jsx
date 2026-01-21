@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Package, AlertTriangle, DollarSign, Target, Loader2, TrendingUp, Activity, Clock, ShoppingCart } from 'lucide-react';
 import api from '../services/api';
+// StatCard removed or kept if needed, but we are using BentoItems now. Keeping for reference if needed elsewhere.
 import StatCard from './StatCard';
-import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
+import { BentoGrid, BentoItem } from './BentoGrid';
+import ForecastSimulator from './ForecastSimulator';
+import InventoryHeatmap from './InventoryHeatmap';
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
@@ -31,7 +34,7 @@ const Dashboard = () => {
                 if (statsRes.status === 'fulfilled') {
                     setStats(statsRes.value.data);
                 }
-                
+
                 if (trendsRes.status === 'fulfilled') {
                     const trendData = trendsRes.value.data;
                     const chartData = trendData.dates?.slice(-7).map((date, i) => ({
@@ -40,7 +43,7 @@ const Dashboard = () => {
                     })) || [];
                     setSalesTrend(chartData);
                 }
-                
+
                 if (topRes.status === 'fulfilled') {
                     setTopProducts(topRes.value.data || []);
                 }
@@ -53,7 +56,7 @@ const Dashboard = () => {
         };
 
         fetchDashboardData();
-        
+
         // Refresh every 5 minutes
         const interval = setInterval(fetchDashboardData, 5 * 60 * 1000);
         return () => clearInterval(interval);
@@ -96,203 +99,147 @@ const Dashboard = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
-                    <p className="text-sm text-gray-500 mt-1">Real-time inventory insights</p>
+                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        Overview
+                    </h2>
+                    <p className="text-sm text-slate-400 mt-1">Real-time command center</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Clock className="h-4 w-4" />
-                    <span>Auto-refreshes every 5 min</span>
+                <div className="flex items-center gap-2 text-xs font-mono text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">
+                    <Clock className="h-3 w-3 animate-pulse text-emerald-500" />
+                    <span>LIVE UPDATE: 5m</span>
                 </div>
             </div>
 
-            {/* Main Stats Grid */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard
+            <BentoGrid>
+                {/* 1. Key Metric: Total Products */}
+                <BentoItem
+                    colSpan={1}
                     title="Total Products"
-                    value={stats.total_products.toLocaleString()}
-                    icon={Package}
-                    color="blue"
-                    trend="stable"
-                    trendValue={`${stats.products_with_forecasts} forecasted`}
-                    trendLabel=""
+                    icon={<Package className="h-5 w-5" />}
+                    className="bg-blue-950/20 hover:bg-blue-900/20 border-blue-500/20 hover:border-blue-500/40"
+                    header={
+                        <div className="mt-4">
+                            <div className="text-4xl font-bold text-white tracking-tight">
+                                {stats.total_products.toLocaleString()}
+                            </div>
+                            <div className="text-xs text-blue-400 mt-1 flex items-center gap-1">
+                                <Activity className="h-3 w-3" />
+                                {stats.products_with_forecasts} active models
+                            </div>
+                        </div>
+                    }
                 />
 
-                <StatCard
-                    title="Stock Alerts"
-                    value={stats.low_stock_count + stats.out_of_stock_count}
-                    icon={AlertTriangle}
-                    color={stats.low_stock_count + stats.out_of_stock_count > 5 ? 'red' : stats.low_stock_count > 0 ? 'yellow' : 'green'}
-                    trend={stats.out_of_stock_count > 0 ? 'down' : 'stable'}
-                    trendValue={stats.out_of_stock_count > 0 ? `${stats.out_of_stock_count} out of stock` : 'All stocked'}
-                    trendLabel=""
+                {/* 2. Key Metric: Inventory Value */}
+                <BentoItem
+                    colSpan={1}
+                    title="Valuation"
+                    icon={<DollarSign className="h-5 w-5" />}
+                    className="bg-indigo-950/20 hover:bg-indigo-900/20 border-indigo-500/20 hover:border-indigo-500/40"
+                    header={
+                        <div className="mt-4">
+                            <div className="text-4xl font-bold text-white tracking-tight">
+                                {formatCurrency(stats.inventory_value)}
+                            </div>
+                            <div className="text-xs text-indigo-400 mt-1">
+                                Current holding value
+                            </div>
+                        </div>
+                    }
                 />
 
-                <StatCard
-                    title="Inventory Value"
-                    value={formatCurrency(stats.inventory_value)}
-                    icon={DollarSign}
-                    color="indigo"
-                    trend="up"
-                    trendValue="Current valuation"
-                    trendLabel=""
-                />
+                {/* 3. Interactive Component: Forecast Simulator (Large) */}
+                <BentoItem
+                    colSpan={2}
+                    rowSpan={2}
+                    title="AI Forecast Simulator"
+                    icon={<TrendingUp className="h-5 w-5" />}
+                    className="relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950/50 pointer-events-none" />
+                    <ForecastSimulator initialData={salesTrend} />
+                </BentoItem>
 
-                <StatCard
-                    title="Forecast Accuracy"
-                    value={stats.avg_forecast_accuracy > 0 ? `${(stats.avg_forecast_accuracy * 100).toFixed(1)}%` : 'N/A'}
-                    icon={Target}
-                    color={getAccuracyColor(stats.avg_forecast_accuracy)}
-                    trend="stable"
-                    trendValue={stats.avg_forecast_accuracy >= 0.8 ? 'Excellent' : stats.avg_forecast_accuracy >= 0.7 ? 'Good' : 'Needs data'}
-                    trendLabel=""
-                />
-            </div>
-
-            {/* Secondary Grid */}
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* 7-Day Sales Trend Mini Chart */}
-                <div className="rounded-xl bg-white p-6 shadow-lg border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">7-Day Sales</h3>
-                        <TrendingUp className="h-5 w-5 text-indigo-500" />
+                {/* 4. Critical Alert: Stock Health */}
+                <BentoItem
+                    colSpan={1}
+                    title="Stock Health"
+                    icon={<AlertTriangle className="h-5 w-5" />}
+                    className={`${stats.out_of_stock_count > 0 ? 'bg-red-950/20 border-red-500/20' : 'bg-emerald-950/20 border-emerald-500/20'
+                        }`}
+                >
+                    <div className="mt-4 flex flex-col gap-2">
+                        <div className="flex justify-between items-center p-2 rounded bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs text-slate-400">Low Stock</span>
+                            <span className="text-amber-500 font-bold">{stats.low_stock_count}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 rounded bg-slate-900/50 border border-slate-800">
+                            <span className="text-xs text-slate-400">Out of Stock</span>
+                            <span className="text-red-500 font-bold">{stats.out_of_stock_count}</span>
+                        </div>
                     </div>
-                    {salesTrend.length > 0 ? (
-                        <div className="h-[120px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={salesTrend}>
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            borderRadius: '8px', 
-                                            border: '1px solid #e2e8f0',
-                                            fontSize: '12px'
-                                        }}
-                                        formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']}
-                                    />
-                                    <Line 
-                                        type="monotone" 
-                                        dataKey="value" 
-                                        stroke="#6366f1" 
-                                        strokeWidth={2}
-                                        dot={{ fill: '#6366f1', strokeWidth: 0, r: 3 }}
-                                    />
-                                </LineChart>
-                            </ResponsiveContainer>
+                </BentoItem>
+
+                {/* 5. Forecast Accuracy */}
+                <BentoItem
+                    colSpan={1}
+                    title="Model Accuracy"
+                    icon={<Target className="h-5 w-5" />}
+                    className="bg-purple-950/20 border-purple-500/20"
+                    header={
+                        <div className="mt-4">
+                            <div className="text-4xl font-bold text-white tracking-tight">
+                                {stats.avg_forecast_accuracy > 0 ? `${(stats.avg_forecast_accuracy * 100).toFixed(0)}%` : 'N/A'}
+                            </div>
+                            <div className="text-xs text-purple-400 mt-1">
+                                Mean Average Precision
+                            </div>
                         </div>
-                    ) : (
-                        <div className="h-[120px] flex items-center justify-center text-slate-400 text-sm">
-                            No sales data available
-                        </div>
-                    )}
-                    <div className="mt-2 flex justify-between text-xs text-slate-500">
-                        {salesTrend.map((item, i) => (
-                            <span key={i}>{item.date}</span>
+                    }
+                />
+
+                {/* 6. Visualization: Inventory Heatmap */}
+                <BentoItem
+                    colSpan={2}
+                    rowSpan={1}
+                    title="Inventory Composition"
+                    icon={<Package className="h-5 w-5" />}
+                >
+                    <InventoryHeatmap stats={stats} />
+                </BentoItem>
+
+                {/* 7. Top Products List */}
+                <BentoItem
+                    colSpan={2}
+                    rowSpan={1}
+                    title="Top Performers"
+                    icon={<ShoppingCart className="h-5 w-5" />}
+                >
+                    <div className="space-y-3 mt-2">
+                        {topProducts.slice(0, 3).map((product, index) => (
+                            <div key={product.product_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                                <span className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold ${index === 0 ? 'bg-amber-500/20 text-amber-500' :
+                                    index === 1 ? 'bg-slate-500/20 text-slate-400' :
+                                        'bg-orange-500/20 text-orange-500'
+                                    }`}>
+                                    #{index + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-slate-200 truncate">{product.name}</p>
+                                </div>
+                                <span className="text-xs font-mono text-emerald-400">
+                                    ${Number(product.revenue).toLocaleString()}
+                                </span>
+                            </div>
                         ))}
                     </div>
-                </div>
+                </BentoItem>
 
-                {/* Top Products */}
-                <div className="rounded-xl bg-white p-6 shadow-lg border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">Top Products</h3>
-                        <ShoppingCart className="h-5 w-5 text-emerald-500" />
-                    </div>
-                    {topProducts.length > 0 ? (
-                        <div className="space-y-3">
-                            {topProducts.slice(0, 5).map((product, index) => (
-                                <div key={product.product_id} className="flex items-center gap-3">
-                                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                                        index === 0 ? 'bg-amber-100 text-amber-700' :
-                                        index === 1 ? 'bg-slate-200 text-slate-600' :
-                                        index === 2 ? 'bg-orange-100 text-orange-700' :
-                                        'bg-slate-100 text-slate-500'
-                                    }`}>
-                                        {index + 1}
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-slate-800 truncate">{product.name}</p>
-                                        <p className="text-xs text-slate-500">{product.units_sold} units sold</p>
-                                    </div>
-                                    <span className="text-sm font-semibold text-slate-800">
-                                        ${product.revenue?.toLocaleString()}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="h-[160px] flex items-center justify-center text-slate-400 text-sm">
-                            No sales data yet
-                        </div>
-                    )}
-                </div>
-
-                {/* System Status */}
-                <div className="rounded-xl bg-white p-6 shadow-lg border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">System Status</h3>
-                        <Activity className="h-5 w-5 text-green-500" />
-                    </div>
-                    <div className="space-y-3">
-                        <StatusItem 
-                            label="API Gateway" 
-                            status="online" 
-                        />
-                        <StatusItem 
-                            label="Forecasting Engine" 
-                            status={stats.products_with_forecasts > 0 ? 'active' : 'idle'} 
-                        />
-                        <StatusItem 
-                            label="Database" 
-                            status="online" 
-                        />
-                        <StatusItem 
-                            label="Cache Layer" 
-                            status="online" 
-                        />
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-slate-100">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-slate-600">Inventory Health</span>
-                            <span className={`text-sm font-semibold ${
-                                stats.health_status === 'healthy' ? 'text-green-600' :
-                                stats.health_status === 'warning' ? 'text-amber-600' :
-                                'text-red-600'
-                            }`}>
-                                {stats.health_status?.charAt(0).toUpperCase() + stats.health_status?.slice(1)}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 shadow-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="text-white">
-                        <h3 className="text-lg font-semibold">Ready to optimize your inventory?</h3>
-                        <p className="text-indigo-100 text-sm mt-1">
-                            Generate forecasts and analyze trends to make data-driven decisions.
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <a 
-                            href="#forecasting" 
-                            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
-                        >
-                            <TrendingUp className="h-4 w-4" />
-                            Generate Forecast
-                        </a>
-                        <a 
-                            href="#analytics" 
-                            className="inline-flex items-center gap-2 rounded-lg bg-indigo-400/30 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400/40 transition-colors"
-                        >
-                            View Analytics
-                        </a>
-                    </div>
-                </div>
-            </div>
+            </BentoGrid>
         </div>
     );
 };
+
 
 // Status Item Component
 const StatusItem = ({ label, status }) => {
@@ -302,9 +249,9 @@ const StatusItem = ({ label, status }) => {
         idle: { color: 'bg-slate-400', text: 'Idle' },
         offline: { color: 'bg-red-500', text: 'Offline' }
     };
-    
+
     const config = statusConfig[status] || statusConfig.offline;
-    
+
     return (
         <div className="flex items-center gap-2">
             <div className={`h-2.5 w-2.5 rounded-full ${config.color}`}></div>

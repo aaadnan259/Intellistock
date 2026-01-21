@@ -1,3 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-slate-950 text-slate-100 font-sans antialiased overflow-x-hidden;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-mono font-bold text-white;
+    }
+}
+
+@layer utilities {
+    .glass {
+        @apply bg-slate-900/40 backdrop-blur-xl border border-white/5 shadow-2xl;
+    }
+
+    .glass-card {
+        @apply bg-slate-900/50 backdrop-blur-md border border-slate-800 hover:border-slate-700 transition-all duration-300;
+    }
+
+    .text-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-slate-950;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-slate-800 rounded-full hover:bg-slate-700 transition-colors border-2 border-slate-950;
+    }
+}
