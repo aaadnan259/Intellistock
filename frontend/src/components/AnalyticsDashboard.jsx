@@ -3,6 +3,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Download, Filter } from 'lucide-react';
 import { inventoryApi } from '../services/api';
 import { BentoGrid, BentoItem } from './BentoGrid';
+import LoadingSkeleton from './LoadingSkeleton';
 
 const AnalyticsDashboard = () => {
     const [abcData, setAbcData] = useState([]);
@@ -72,28 +73,32 @@ const AnalyticsDashboard = () => {
                     className="min-h-[400px]"
                 >
                     <div className="h-full w-full flex items-center justify-center mt-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={abcData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {abcData.map((entry, index) => (
-                                        <Cell key={entry.name || `unknown-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC', borderRadius: '12px' }}
-                                    itemStyle={{ color: '#F8FAFC' }}
-                                />
-                                <Legend horizontalAlign="right" verticalAlign="middle" layout="vertical" iconType="circle" />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        {loading ? (
+                            <LoadingSkeleton variant="chart" className="h-[300px] w-full" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={abcData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={80}
+                                        outerRadius={100}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {abcData.map((entry, index) => (
+                                            <Cell key={entry.name || `unknown-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', color: '#F8FAFC', borderRadius: '12px' }}
+                                        itemStyle={{ color: '#F8FAFC' }}
+                                    />
+                                    <Legend horizontalAlign="right" verticalAlign="middle" layout="vertical" iconType="circle" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </BentoItem>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MoreVertical, ArrowUpDown } from 'lucide-react';
 import { inventoryApi } from '../services/api';
+import LoadingSkeleton from './LoadingSkeleton';
 
 const ProductTable = ({ limit }) => {
     const [products, setProducts] = useState([]);
@@ -55,7 +56,7 @@ const ProductTable = ({ limit }) => {
     };
 
     if (loading && products.length === 0) {
-        return <div className="p-8 text-center text-slate-500">Loading inventory...</div>;
+        return <LoadingSkeleton count={limit || 10} className="p-6" />;
     }
 
     return (

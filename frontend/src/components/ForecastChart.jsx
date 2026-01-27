@@ -10,8 +10,12 @@ import {
     Area,
     ComposedChart
 } from 'recharts';
+import LoadingSkeleton from './LoadingSkeleton';
 
-const ForecastChart = ({ data }) => {
+const ForecastChart = ({ data, loading }) => {
+    if (loading) {
+        return <LoadingSkeleton variant="chart" className="h-[400px] w-full" />;
+    }
     return (
         <div className="h-[400px] w-full bg-slate-900/50 rounded-xl border border-slate-800 p-4 shadow-inner">
             <ResponsiveContainer width="100%" height="100%">
