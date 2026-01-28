@@ -19,6 +19,7 @@ from forecasting.mlflow_tracking import (
     log_forecast_metrics,
     log_data_characteristics,
 )
+from core.data_validation import validate_before_forecast, DataValidationError
 import logging
 import warnings
 
@@ -294,6 +295,14 @@ class ForecastingEngine:
         df = self._get_sales_df(product_id)
         if df is None:
             return {"error": "Insufficient data"}
+
+        # Validate data before proceeding
+        try:
+            validate_before_forecast(
+                df, product_id, min_data_points=config.min_data_points
+            )
+        except DataValidationError as e:
+            return {"error": str(e)}
 
         # Split for validation if needed, but for future forecast we train on all
         # To get metrics, we usually backtest. For MVP, we'll train on all and just return forecast
