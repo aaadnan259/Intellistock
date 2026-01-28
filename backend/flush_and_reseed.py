@@ -1,10 +1,10 @@
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from inventory.models import Sale, Product
+from inventory.models import Sale, Product  # noqa: E402
 
 print(f"Deleting {Sale.objects.count()} sales...")
 Sale.objects.all().delete()

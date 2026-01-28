@@ -23,3 +23,5 @@ Thumbs.db
 .agent/
 .shared/
 design-system/
+
+.mypy_cache/

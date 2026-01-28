@@ -8,6 +8,7 @@ Exponential smoothing or ensemble.
 This isn't perfect—sometimes the "wrong" model wins on backtest metrics—but
 it's better than making users guess.
 """
+
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -376,9 +377,9 @@ class ForecastingEngine:
             log_forecast_params(
                 {
                     "forecast_days": days,
-                    "model_selection": "auto"
-                    if reason != "User selection"
-                    else "manual",
+                    "model_selection": (
+                        "auto" if reason != "User selection" else "manual"
+                    ),
                     "validation_split": config.validation_split,
                     "train_size": train_size,
                     "test_size": len(test_df),

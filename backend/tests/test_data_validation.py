@@ -3,6 +3,7 @@ Tests for data validation functionality.
 
 Covers SalesDataValidator, ValidationResult, and validation guards.
 """
+
 import pytest
 import pandas as pd
 from datetime import datetime, timedelta

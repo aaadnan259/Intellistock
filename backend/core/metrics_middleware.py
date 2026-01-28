@@ -3,6 +3,7 @@ Prometheus metrics middleware.
 
 Records HTTP request metrics for all requests.
 """
+
 import time
 import logging
 from django.conf import settings

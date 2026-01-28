@@ -2,19 +2,28 @@ from rest_framework import viewsets, serializers, permissions
 from .models import Product, Sale
 from django.core.exceptions import ValidationError
 
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = "__all__"
+
 
 class SaleSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
 
     class Meta:
         model = Sale
         # Explicit fields for security
-        fields = ['id', 'product', 'product_name', 'quantity', 'total_price', 'sale_date']
-        read_only_fields = ['total_price', 'sale_date']
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "quantity",
+            "total_price",
+            "sale_date",
+        ]
+        read_only_fields = ["total_price", "sale_date"]
 
     def create(self, validated_data):
         try:
@@ -22,16 +31,18 @@ class SaleSerializer(serializers.ModelSerializer):
         except ValidationError as e:
             raise serializers.ValidationError({"detail": e.messages})
 
+
 class ProductViewSet(viewsets.ModelViewSet):
     # Pagination is handled via REST_FRAMEWORK settings (StandardResultsSetPagination)
     # Optimized: Prefetch sales to prevent N+1 queries when accessing sales history
-    queryset = Product.objects.prefetch_related('sales').all().order_by('id')
+    queryset = Product.objects.prefetch_related("sales").all().order_by("id")
     serializer_class = ProductSerializer
     # Security: Default to Authenticated, or AllowAny if this is a public demo
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
 
 class SaleViewSet(viewsets.ModelViewSet):
     # Performance: Fetch related product in single query
-    queryset = Sale.objects.select_related('product').all().order_by('-sale_date')
+    queryset = Sale.objects.select_related("product").all().order_by("-sale_date")
     serializer_class = SaleSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

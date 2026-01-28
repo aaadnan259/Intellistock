@@ -1,4 +1,5 @@
 """API endpoints for forecast explainability."""
+
 import logging
 from datetime import timedelta
 

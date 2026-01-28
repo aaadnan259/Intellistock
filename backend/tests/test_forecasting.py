@@ -3,6 +3,7 @@ Tests for forecasting engine functionality.
 
 Covers model selection, forecast generation, and data characteristics.
 """
+
 import pytest
 from decimal import Decimal
 

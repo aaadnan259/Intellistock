@@ -4,12 +4,13 @@ Data validation using Great Expectations.
 Validates sales data before it enters the forecasting pipeline.
 Catches data quality issues early to prevent garbage-in-garbage-out.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import pandas as pd
+import pandas as pd  # type: ignore
 
 logger = logging.getLogger(__name__)
 

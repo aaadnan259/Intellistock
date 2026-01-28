@@ -4,6 +4,7 @@ Tests for analytics functionality.
 Covers ABC analysis, turnover ratio, slow mover detection,
 and inventory health scoring.
 """
+
 import pytest
 from decimal import Decimal
 from datetime import datetime, timedelta

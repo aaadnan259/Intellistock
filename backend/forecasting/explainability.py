@@ -3,13 +3,14 @@ SHAP-based model explainability for forecasting.
 
 Provides feature importance and contribution analysis for forecast predictions.
 """
+
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 import numpy as np
 import pandas as pd
-import shap
+import shap  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,9 @@ class ExplainabilityResult:
     prediction_date: str
     predicted_value: float
     base_value: float
-    feature_contributions: list[FeatureContribution]
-    top_positive_drivers: list[FeatureContribution]
-    top_negative_drivers: list[FeatureContribution]
+    feature_contributions: List[FeatureContribution]
+    top_positive_drivers: List[FeatureContribution]
+    top_negative_drivers: List[FeatureContribution]
     explanation_text: str
 
 

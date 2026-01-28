@@ -3,6 +3,7 @@ Prometheus metrics for Intellistock.
 
 Exposes application metrics for monitoring and alerting.
 """
+
 from prometheus_client import Counter, Histogram, Gauge, Info
 
 # Application info

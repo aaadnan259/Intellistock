@@ -1,6 +1,7 @@
 """
 Shared pytest fixtures for Intellistock test suite.
 """
+
 import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal

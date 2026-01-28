@@ -3,6 +3,7 @@ ML-specific invariance and consistency tests.
 
 These tests verify model behavior stability and expected properties.
 """
+
 import pytest
 import numpy as np
 from datetime import datetime, timedelta

@@ -5,20 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0004_add_indexes'),
+        ("inventory", "0004_add_indexes"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='product',
-            name='sku',
+            model_name="product",
+            name="sku",
             field=models.CharField(max_length=100, unique=True),
         ),
         migrations.AlterField(
-            model_name='sale',
-            name='sale_date',
+            model_name="sale",
+            name="sale_date",
             field=models.DateField(db_index=True, default=datetime.date.today),
         ),
     ]

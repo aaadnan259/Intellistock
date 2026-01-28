@@ -1,6 +1,7 @@
 """
 Core views including Prometheus metrics endpoint.
 """
+
 from django.http import HttpResponse
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 

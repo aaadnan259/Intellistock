@@ -7,6 +7,7 @@ data drifts, retrain automatically. If everything's fine, do nothing.
 Runs nightly via Celery Beat. Most nights it's a no-op. Occasionally
 it catches something and retrains before anyone notices a problem.
 """
+
 import logging
 from celery import shared_task
 from datetime import datetime

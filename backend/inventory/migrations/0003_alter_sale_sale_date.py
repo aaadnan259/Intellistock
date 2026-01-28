@@ -5,15 +5,17 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0002_remove_product_created_at_remove_product_description_and_more'),
+        (
+            "inventory",
+            "0002_remove_product_created_at_remove_product_description_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='sale',
-            name='sale_date',
+            model_name="sale",
+            name="sale_date",
             field=models.DateField(db_index=True, default=django.utils.timezone.now),
         ),
     ]

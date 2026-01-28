@@ -4,54 +4,53 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0001_initial'),
+        ("inventory", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='product',
-            name='created_at',
+            model_name="product",
+            name="created_at",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='description',
+            model_name="product",
+            name="description",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='reorder_point',
+            model_name="product",
+            name="reorder_point",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='updated_at',
+            model_name="product",
+            name="updated_at",
         ),
         migrations.AlterField(
-            model_name='product',
-            name='name',
+            model_name="product",
+            name="name",
             field=models.CharField(max_length=255),
         ),
         migrations.AlterField(
-            model_name='product',
-            name='sku',
+            model_name="product",
+            name="sku",
             field=models.CharField(db_index=True, max_length=100, unique=True),
         ),
         migrations.AlterField(
-            model_name='sale',
-            name='quantity',
+            model_name="sale",
+            name="quantity",
             field=models.PositiveIntegerField(),
         ),
         migrations.AlterField(
-            model_name='sale',
-            name='sale_date',
+            model_name="sale",
+            name="sale_date",
             field=models.DateField(auto_now_add=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='sale',
-            name='total_price',
+            model_name="sale",
+            name="total_price",
             field=models.DecimalField(blank=True, decimal_places=2, max_digits=12),
         ),
         migrations.DeleteModel(
-            name='Order',
+            name="Order",
         ),
     ]
