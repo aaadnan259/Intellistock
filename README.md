@@ -92,6 +92,52 @@ intellistock/
 └── docker-compose.yml
 ```
 
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Frontend
+        UI[React App]
+    end
+    
+    subgraph Backend
+        API[Django REST API]
+        Engine[Forecasting Engine]
+        SHAP[SHAP Explainer]
+        Drift[Drift Detector]
+        Scenario[Scenario Engine]
+    end
+    
+    subgraph Workers
+        Celery[Celery Workers]
+        Beat[Celery Beat]
+    end
+    
+    subgraph Storage
+        PG[(PostgreSQL)]
+        Redis[(Redis)]
+        MLflow[(MLflow)]
+    end
+    
+    subgraph Monitoring
+        Prom[Prometheus]
+        Evidently[Evidently]
+    end
+    
+    UI --> API
+    API --> Engine
+    API --> SHAP
+    API --> Drift
+    API --> Scenario
+    Engine --> PG
+    Engine --> MLflow
+    Celery --> Engine
+    Beat --> Celery
+    Celery --> Redis
+    Drift --> Evidently
+    API --> Prom
+```
+
 ## API Highlights
 
 ```bash
