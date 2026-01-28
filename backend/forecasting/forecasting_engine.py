@@ -13,6 +13,12 @@ from sklearn.metrics import (
 )
 from sklearn.linear_model import LinearRegression
 from config.forecasting_config import forecasting_config as config
+from forecasting.mlflow_tracking import (
+    track_forecast_run,
+    log_forecast_params,
+    log_forecast_metrics,
+    log_data_characteristics,
+)
 import logging
 import warnings
 
@@ -303,34 +309,83 @@ class ForecastingEngine:
             chars = self.analyze_product_data(product_id)
             model_type, reason = self.select_best_model(chars)
         else:
+            chars = self.analyze_product_data(product_id)
             reason = "User selection"
 
-        # 1. Backtest for accuracy metrics
-        if model_type == "prophet":
-            bt_res = self.forecast_prophet(train_df, days=len(test_df))
-        elif model_type == "arima":
-            bt_res = self.forecast_arima(train_df, days=len(test_df))
-        elif model_type == "exponential":
-            bt_res = self.forecast_exponential_smoothing(train_df, days=len(test_df))
-        else:  # ensemble
-            bt_res = self.forecast_ensemble(train_df, days=len(test_df))
+        # MLflow tracking context
+        with track_forecast_run(product_id=product_id, model_type=model_type) as run:
+            # Log forecast parameters
+            log_forecast_params(
+                {
+                    "forecast_days": days,
+                    "model_selection": "auto"
+                    if reason != "User selection"
+                    else "manual",
+                    "validation_split": config.validation_split,
+                    "train_size": train_size,
+                    "test_size": len(test_df),
+                }
+            )
 
-        bt_values = [x["value"] for x in bt_res]
-        metrics = self.calculate_accuracy_metrics(test_df["y"].values, bt_values)
+            # Log data characteristics if available
+            if chars:
+                log_data_characteristics(
+                    seasonality_score=chars.get("seasonality", 0),
+                    coefficient_of_variation=chars.get("cv", 0),
+                    trend_strength=chars.get("trend", 0),
+                    n_observations=chars.get("days_count", len(df)),
+                )
 
-        # 2. Final Forecast
-        if model_type == "prophet":
-            final_res = self.forecast_prophet(df, days)
-        elif model_type == "arima":
-            final_res = self.forecast_arima(df, days)
-        elif model_type == "exponential":
-            final_res = self.forecast_exponential_smoothing(df, days)
-        else:
-            final_res = self.forecast_ensemble(df, days)
+            # 1. Backtest for accuracy metrics
+            if model_type == "prophet":
+                bt_res = self.forecast_prophet(train_df, days=len(test_df))
+            elif model_type == "arima":
+                bt_res = self.forecast_arima(train_df, days=len(test_df))
+            elif model_type == "exponential":
+                bt_res = self.forecast_exponential_smoothing(
+                    train_df, days=len(test_df)
+                )
+            else:  # ensemble
+                bt_res = self.forecast_ensemble(train_df, days=len(test_df))
+
+            bt_values = [x["value"] for x in bt_res]
+            metrics = self.calculate_accuracy_metrics(test_df["y"].values, bt_values)
+
+            # Log backtest metrics to MLflow
+            log_forecast_metrics(
+                {
+                    "mae": metrics.get("mae", 0),
+                    "mape": metrics.get("mape", 0),
+                    "r2": metrics.get("r2", 0),
+                }
+            )
+
+            # 2. Final Forecast
+            if model_type == "prophet":
+                final_res = self.forecast_prophet(df, days)
+            elif model_type == "arima":
+                final_res = self.forecast_arima(df, days)
+            elif model_type == "exponential":
+                final_res = self.forecast_exponential_smoothing(df, days)
+            else:
+                final_res = self.forecast_ensemble(df, days)
+
+            # Log forecast summary metrics
+            if final_res:
+                forecast_values = [x["value"] for x in final_res]
+                log_forecast_metrics(
+                    {
+                        "forecast_mean": float(np.mean(forecast_values)),
+                        "forecast_std": float(np.std(forecast_values)),
+                    }
+                )
+
+            mlflow_run_id = run.info.run_id if run else None
 
         return {
             "forecast": final_res,
             "metrics": metrics,
             "model_used": model_type,
             "reason": reason,
+            "mlflow_run_id": mlflow_run_id,
         }
