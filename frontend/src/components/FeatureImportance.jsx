@@ -1,3 +1,13 @@
+/**
+ * SHAP feature importance visualization.
+ * 
+ * Two views:
+ * - "This Prediction": waterfall showing what pushed this specific forecast up/down
+ * - "Overall Importance": bar chart of which features matter most across all predictions
+ * 
+ * The waterfall (local) is best for explaining specific numbers to stakeholders.
+ * The bar chart (global) is better for understanding the model's general behavior.
+ */
 import React, { useState, useEffect } from 'react';
 import {
     BarChart,
@@ -79,8 +89,8 @@ const FeatureImportance = ({ productId, className }) => {
                     <button
                         onClick={() => setActiveTab('local')}
                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'local'
-                                ? "bg-purple-600 text-white"
-                                : "text-slate-400 hover:text-white"
+                            ? "bg-purple-600 text-white"
+                            : "text-slate-400 hover:text-white"
                             }`}
                     >
                         This Prediction
@@ -88,8 +98,8 @@ const FeatureImportance = ({ productId, className }) => {
                     <button
                         onClick={() => setActiveTab('global')}
                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'global'
-                                ? "bg-purple-600 text-white"
-                                : "text-slate-400 hover:text-white"
+                            ? "bg-purple-600 text-white"
+                            : "text-slate-400 hover:text-white"
                             }`}
                     >
                         Overall Importance

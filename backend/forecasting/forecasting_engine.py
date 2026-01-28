@@ -1,3 +1,13 @@
+"""
+Core forecasting logic.
+
+The main idea: instead of forcing users to pick a model, we analyze the data
+and pick for them. Seasonal patterns? Prophet. Clear trend? ARIMA. Noisy mess?
+Exponential smoothing or ensemble.
+
+This isn't perfect—sometimes the "wrong" model wins on backtest metrics—but
+it's better than making users guess.
+"""
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -29,6 +39,17 @@ warnings.filterwarnings("ignore")
 
 
 class ForecastingEngine:
+    """
+    Generates demand forecasts with automatic model selection.
+
+    Usage:
+        engine = ForecastingEngine()
+        result = engine.generate_forecast(product_id=42, days=30)
+
+    The result includes the forecast, confidence intervals, backtest metrics,
+    and which model was selected (and why).
+    """
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
@@ -65,6 +86,15 @@ class ForecastingEngine:
         return df
 
     def analyze_product_data(self, product_id):
+        """
+        Compute stats that help us pick a model:
+        - seasonality: autocorrelation at lag 7 (weekly pattern)
+        - cv: coefficient of variation (how noisy is it?)
+        - trend: normalized slope (growing? shrinking? flat?)
+
+        These thresholds were tuned by trial and error on ~50 product histories.
+        They're not magic numbers, just what worked reasonably well.
+        """
         df = self._get_sales_df(product_id)
         if df is None or len(df) < config.min_data_points:
             return None
@@ -76,6 +106,7 @@ class ForecastingEngine:
         avg_daily_sales = np.mean(y)
 
         # 2. Variability (CV)
+        # CV = std/mean. High CV = noisy data.
         cv = np.std(y) / avg_daily_sales if avg_daily_sales > 0 else 0
 
         # 3. Trend (Slope)
@@ -104,6 +135,17 @@ class ForecastingEngine:
         }
 
     def select_best_model(self, characteristics):
+        """
+        Decision tree for model selection. Pretty simple:
+
+        1. Strong weekly/yearly pattern? → Prophet (it's built for this)
+        2. Clear trend + low noise? → ARIMA (handles trends well)
+        3. Super noisy? → Exponential Smoothing (smooths out the chaos)
+        4. Can't tell? → Ensemble (hedge our bets)
+
+        The thresholds (0.3, 0.5, 1.0) came from experimenting with
+        our test dataset. Your mileage may vary.
+        """
         if not characteristics:
             return "ensemble", "Insufficient data"
 
@@ -292,6 +334,13 @@ class ForecastingEngine:
         }
 
     def generate_forecast(self, product_id, days=30, model_type="auto"):
+        """
+        Main entry point. Gets historical data, picks a model, trains it,
+        and generates predictions.
+
+        model_override lets you force a specific model ("prophet", "arima", etc.)
+        if you want to compare or know something we don't.
+        """
         df = self._get_sales_df(product_id)
         if df is None:
             return {"error": "Insufficient data"}

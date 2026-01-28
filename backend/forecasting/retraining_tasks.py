@@ -1,4 +1,12 @@
-"""Automated model retraining tasks using Celery."""
+"""
+Celery tasks for automated retraining.
+
+The idea: models shouldn't need babysitting. If performance degrades or
+data drifts, retrain automatically. If everything's fine, do nothing.
+
+Runs nightly via Celery Beat. Most nights it's a no-op. Occasionally
+it catches something and retrains before anyone notices a problem.
+"""
 import logging
 from celery import shared_task
 from datetime import datetime
@@ -9,8 +17,9 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def retrain_all_models(self):
     """
-    Periodic task to retrain all product forecasting models.
-    Scheduled via Celery Beat.
+    Nightly job: check all products for retraining needs.
+    Triggers separate tasks for products that need help to avoid
+    one giant locking transaction.
     """
     try:
         from inventory.models import Product
