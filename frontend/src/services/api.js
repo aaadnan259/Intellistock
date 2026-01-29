@@ -14,6 +14,38 @@ const api = axios.create({
     },
 });
 
+// Exponential backoff retry for transient failures
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const config = error.config;
+
+        // Don't retry if we've exhausted attempts or it's not retryable
+        if (!config || config._retryCount >= MAX_RETRIES) {
+            return Promise.reject(error);
+        }
+
+        // Only retry on network errors or 5xx server errors
+        const isNetworkError = !error.response;
+        const isServerError = error.response?.status >= 500;
+
+        if (!isNetworkError && !isServerError) {
+            return Promise.reject(error);
+        }
+
+        config._retryCount = (config._retryCount || 0) + 1;
+        const delay = RETRY_DELAY_MS * Math.pow(2, config._retryCount - 1);
+
+        console.warn(`API retry ${config._retryCount}/${MAX_RETRIES} after ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        return api(config);
+    }
+);
+
 export const inventoryApi = {
     getProducts: (params) => api.get('/inventory/products/', { params }),
     getProduct: (id) => api.get(`/inventory/products/${id}/`),
