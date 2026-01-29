@@ -1,35 +1,6 @@
-from rest_framework import viewsets, serializers, permissions
+from rest_framework import viewsets, permissions
 from .models import Product, Sale
-from django.core.exceptions import ValidationError
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Product
-        fields = "__all__"
-
-
-class SaleSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source="product.name", read_only=True)
-
-    class Meta:
-        model = Sale
-        # Explicit fields for security
-        fields = [
-            "id",
-            "product",
-            "product_name",
-            "quantity",
-            "total_price",
-            "sale_date",
-        ]
-        read_only_fields = ["total_price", "sale_date"]
-
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except ValidationError as e:
-            raise serializers.ValidationError({"detail": e.messages})
+from .serializers import ProductSerializer, SaleSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
