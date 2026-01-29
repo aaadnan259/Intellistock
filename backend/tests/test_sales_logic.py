@@ -33,7 +33,7 @@ class TestSalesLogic:
         assert "Stock insufficient" in str(resp.data)
 
     def test_advanced_forecast_api_resilience(self):
-        """Test that forecast endpoint handles products with insufficient data gracefully"""
+        """Test forecast endpoint handles products with insufficient data."""
         url = reverse("advanced_predict")
         resp = self.client.post(
             url,

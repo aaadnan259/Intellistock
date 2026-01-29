@@ -24,7 +24,10 @@ class AdvancedForecastAPI(APIView):
         if not characteristics:
             return Response(
                 {
-                    "error": "Insufficient data to generate forecast (min 14 days required)"
+                    "error": (
+                        "Insufficient data to generate forecast "
+                        "(min 14 days required)"
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

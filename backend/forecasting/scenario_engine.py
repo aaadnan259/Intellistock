@@ -153,9 +153,8 @@ class ScenarioEngine:
         pct = impact["percent_change"]
 
         if pct > 20:
-            recs.append(
-                f"⚠️ {pct:.1f}% demand increase expected. Consider increasing safety stock."
-            )
+            msg = f"⚠️ {pct:.1f}% demand increase expected. Increase safety stock."
+            recs.append(msg)
         elif pct < -20:
             recs.append(
                 f"📉 {pct:.1f}% demand decrease expected. Review inventory levels."

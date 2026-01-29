@@ -55,7 +55,7 @@ class ForecastingEngine:
         self.logger = logging.getLogger(__name__)
 
     def _get_sales_df(self, product_id):
-        """Helper to fetch and aggregate sales data using DB aggregation for performance"""
+        """Fetch and aggregate sales data using DB aggregation for perf."""
         from django.db.models.functions import TruncDate
 
         # Optimize: Aggregate at DB level to avoid loading millions of rows
@@ -259,7 +259,7 @@ class ForecastingEngine:
 
             pred = model.forecast(days)
 
-            # CI estimation for ES is harder manually, we'll estimate using residual std dev
+            # CI estimation for ES is harder manually, estimate via residual std
             residuals = df["y"].values - model.fittedvalues
             std_resid = np.std(residuals)
 
@@ -355,9 +355,9 @@ class ForecastingEngine:
             return {"error": str(e)}
 
         # Split for validation if needed, but for future forecast we train on all
-        # To get metrics, we usually backtest. For MVP, we'll train on all and just return forecast
+        # To get metrics, we usually backtest. For MVP, train on all data.
         # UNLESS we need metrics returned to API.
-        # Let's do a simple 80/20 split backtest calculate metrics, THEN retrain on all for future.
+        # Simple 80/20 split backtest, calculate metrics, then retrain on all.
 
         train_size = int(len(df) * config.validation_split)
         train_df = df.iloc[:train_size]
