@@ -25,3 +25,7 @@ Thumbs.db
 design-system/
 
 .mypy_cache/
+.pytest_cache/
+mlartifacts/
+mlruns/
+*.sqlite3

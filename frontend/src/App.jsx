@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './components/Dashboard';
 import ProductTable from './components/ProductTable';
 import ForecastingPage from './components/ForecastingPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
