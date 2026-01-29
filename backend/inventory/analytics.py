@@ -60,7 +60,7 @@ class InventoryAnalytics:
             },
         ]
 
-    def perform_abc_analysis(self):
+    def _build_abc_breakdown(self):
         """
         Perform ABC Analysis using Pareto principle.
         A items: Top 20% by value (typically ~80% of total value)
@@ -157,6 +157,38 @@ class InventoryAnalytics:
                 "total_value": total_value,
             },
         }
+
+    def perform_abc_analysis(self):
+        """Return flat list of products with ABC category labels."""
+        breakdown = self._build_abc_breakdown()
+
+        categorized = []
+        for item in breakdown["a_items"]:
+            categorized.append(
+                {
+                    "id": item["product_id"],
+                    **item,
+                    "abc_category": "A",
+                }
+            )
+        for item in breakdown["b_items"]:
+            categorized.append(
+                {
+                    "id": item["product_id"],
+                    **item,
+                    "abc_category": "B",
+                }
+            )
+        for item in breakdown["c_items"]:
+            categorized.append(
+                {
+                    "id": item["product_id"],
+                    **item,
+                    "abc_category": "C",
+                }
+            )
+
+        return categorized
 
     def detect_slow_movers(self, threshold_days=60):
         """

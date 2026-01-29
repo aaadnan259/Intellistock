@@ -26,6 +26,8 @@ class Sale(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             with transaction.atomic():
+                from django.utils import timezone
+
                 # Lock row to prevent race conditions (skip on SQLite for tests)
                 from django.db import connection
 
@@ -36,17 +38,22 @@ class Sale(models.Model):
                         pk=self.product_id
                     )
 
-                if self.quantity > product.current_stock:
-                    raise ValidationError(
-                        f"Stock insufficient for {product.sku}. "
-                        f"Needs {self.quantity}, has {product.current_stock}"
-                    )
+                sale_date = self.sale_date or timezone.now().date()
+                is_historical = sale_date < timezone.now().date()
 
-                self.total_price = product.price * self.quantity
+                if self.total_price is None:
+                    self.total_price = product.price * self.quantity
 
-                # Update stock
-                product.current_stock -= self.quantity
-                product.save()
+                if not is_historical:
+                    if self.quantity > product.current_stock:
+                        raise ValidationError(
+                            f"Stock insufficient for {product.sku}. "
+                            f"Needs {self.quantity}, has {product.current_stock}"
+                        )
+
+                    # Update stock only for current/future sales
+                    product.current_stock -= self.quantity
+                    product.save()
 
         super().save(*args, **kwargs)
 

@@ -56,23 +56,37 @@ class ForecastingEngine:
 
     def _get_sales_df(self, product_id):
         """Fetch and aggregate sales data using DB aggregation for perf."""
+        from django.db import connection
         from django.db.models.functions import TruncDate
 
-        # Optimize: Aggregate at DB level to avoid loading millions of rows
-        sales_data = (
-            Sale.objects.filter(product_id=product_id)
-            .annotate(date=TruncDate("sale_date"))
-            .values("date")
-            .annotate(y=Sum("quantity"))
-            .order_by("date")
-        )
+        if connection.vendor == "sqlite":
+            sales_qs = Sale.objects.filter(product_id=product_id).values(
+                "sale_date",
+                "quantity",
+            )
+            if not sales_qs.exists():
+                return None
 
-        if not sales_data.exists():
-            return None
+            df = pd.DataFrame(list(sales_qs))
+            df["ds"] = pd.to_datetime(df["sale_date"]).dt.normalize()
+            df = df.groupby("ds", as_index=False)["quantity"].sum()
+            df.rename(columns={"quantity": "y"}, inplace=True)
+        else:
+            # Optimize: Aggregate at DB level to avoid loading millions of rows
+            sales_data = (
+                Sale.objects.filter(product_id=product_id)
+                .annotate(date=TruncDate("sale_date"))
+                .values("date")
+                .annotate(y=Sum("quantity"))
+                .order_by("date")
+            )
 
-        df = pd.DataFrame(list(sales_data))
-        # Rename date to ds for Prophet
-        df.rename(columns={"date": "ds"}, inplace=True)
+            if not sales_data.exists():
+                return None
+
+            df = pd.DataFrame(list(sales_data))
+            # Rename date to ds for Prophet
+            df.rename(columns={"date": "ds"}, inplace=True)
 
         # Ensure regex/types
         df["ds"] = pd.to_datetime(df["ds"])

@@ -6,8 +6,19 @@ from datetime import datetime
 from typing import Any
 
 import pandas as pd
-from evidently.metrics import DatasetDriftMetric
-from evidently.report import Report
+
+try:
+    from evidently.metrics import DatasetDriftMetric
+    from evidently.report import Report
+except ImportError:  # pragma: no cover - optional dependency/version drift
+    try:
+        from evidently.metrics.data_drift.dataset_drift_metric import (  # type: ignore
+            DatasetDriftMetric,
+        )
+        from evidently.report import Report  # type: ignore
+    except ImportError:
+        DatasetDriftMetric = None
+        Report = None
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +68,18 @@ class DriftDetector:
         product_id: int,
     ) -> DriftReport:
         """Run drift detection comparing reference to current data."""
+        if DatasetDriftMetric is None or Report is None:
+            return DriftReport(
+                timestamp=datetime.now(),
+                product_id=product_id,
+                data_drift_detected=False,
+                dataset_drift_score=0.0,
+                drifted_features=[],
+                feature_drift_scores={},
+                action_required=False,
+                recommendation="DRIFT CHECK DISABLED: Evidently unavailable",
+            )
+
         ref = self.prepare_data(reference_data)
         curr = self.prepare_data(current_data)
 

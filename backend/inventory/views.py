@@ -32,7 +32,7 @@ class ABCAnalysisAPI(APIView):
 
         if not data:
             analytics = InventoryAnalytics()
-            data = analytics.perform_abc_analysis()
+            data = analytics._build_abc_breakdown()
             cache.set(cache_key, data, timeout=21600)  # 6 hours
 
         return Response(data)
