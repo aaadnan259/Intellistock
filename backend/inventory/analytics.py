@@ -316,6 +316,10 @@ class InventoryAnalytics:
         df = df.reindex(idx, fill_value=0)
         df = df.reset_index().rename(columns={"index": "date"})
 
+        # Ensure numeric dtypes after reindex (Decimal + int fill -> object)
+        df["total"] = pd.to_numeric(df["total"], errors="coerce").fillna(0)
+        df["units"] = pd.to_numeric(df["units"], errors="coerce").fillna(0).astype(int)
+
         # Calculate 7-day Moving Average
         df["ma_7"] = df["total"].rolling(window=7, min_periods=1).mean().fillna(0)
 
