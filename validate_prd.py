@@ -117,7 +117,8 @@ def main():
 
     if missing:
         print(
-            "\nCRITICAL: The following files are missing detailed documentation in the PRD:"
+            "\nCRITICAL: The following files are missing detailed "
+            "documentation in the PRD:"
         )
         for m in missing[:20]:  # Show top 20
             print(f" - {m}")
