@@ -132,9 +132,7 @@ class DashboardStatsAPI(APIView):
                 "health_status": (
                     "healthy"
                     if low_stock < 5
-                    else "warning"
-                    if low_stock < 15
-                    else "critical"
+                    else "warning" if low_stock < 15 else "critical"
                 ),
             }
             cache.set(cache_key, data, timeout=900)  # 15 mins
