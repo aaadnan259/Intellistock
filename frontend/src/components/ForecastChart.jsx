@@ -90,7 +90,7 @@ const ForecastChart = ({ data, loading }) => {
                     />
 
                     <Tooltip
-                        content={({ active, payload, label }) => {
+                        content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                                 const dataPoint = payload[0]?.payload;
                                 return (

@@ -14,40 +14,6 @@ const InventoryHeatmap = ({ stats }) => {
         },
     ];
 
-    const CustomContent = ({ root, depth, x, y, width, height, index, payload, colors, rank, name }) => {
-        return (
-            <g>
-                <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    style={{
-                        fill: payload.fill,
-                        stroke: '#0f172a',
-                        strokeWidth: 2,
-                        strokeOpacity: 1,
-                    }}
-                    rx={8}
-                    ry={8}
-                />
-                {width > 50 && height > 30 && (
-                    <text
-                        x={x + width / 2}
-                        y={y + height / 2}
-                        textAnchor="middle"
-                        fill="#fff"
-                        fontSize={12}
-                        fontWeight="bold"
-                        dy={4}
-                    >
-                        {name}
-                    </text>
-                )}
-            </g>
-        );
-    };
-
     return (
         <div className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -66,6 +32,40 @@ const InventoryHeatmap = ({ stats }) => {
                 </Treemap>
             </ResponsiveContainer>
         </div>
+    );
+};
+
+const CustomContent = ({ x, y, width, height, payload, name }) => {
+    return (
+        <g>
+            <rect
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                style={{
+                    fill: payload.fill,
+                    stroke: '#0f172a',
+                    strokeWidth: 2,
+                    strokeOpacity: 1,
+                }}
+                rx={8}
+                ry={8}
+            />
+            {width > 50 && height > 30 && (
+                <text
+                    x={x + width / 2}
+                    y={y + height / 2}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize={12}
+                    fontWeight="bold"
+                    dy={4}
+                >
+                    {name}
+                </text>
+            )}
+        </g>
     );
 };
 

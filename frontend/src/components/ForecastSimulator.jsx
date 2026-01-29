@@ -10,14 +10,14 @@ const ForecastSimulator = ({ initialData = [] }) => {
         // Fallback mock data if initialData is empty
         const baseData = initialData.length > 0 ? initialData : Array.from({ length: 12 }, (_, i) => ({
             name: `Month ${i + 1}`,
-            actual: 1000 + Math.random() * 500 + (i * 50),
+            actual: 1000 + Math.sin(i) * 500 + (i * 50) + 500, // Deterministic mock
             forecast: 1000 + (i * 60)
         }));
 
         return baseData.map(item => ({
             ...item,
-            // Apply growth factor logic to the 'forecast' part or create a 'simulated' line
-            simulated: item.forecast * growthFactor + (Math.random() * 50 * (growthFactor - 1))
+            // Apply growth factor logic
+            simulated: item.forecast * growthFactor + (Math.sin(item.name.length) * 50 * (growthFactor - 1))
         }));
     }, [initialData, growthFactor]);
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
-const StatCard = ({ title, value, prefix = "", suffix = "", trend, trendLabel, icon: Icon, color = "blue" }) => {
+const StatCard = ({ title, value, prefix = "", suffix = "", trend, trendLabel, icon, color = "blue" }) => {
+    const IconComponent = icon;
     const isPositive = trend > 0;
     const isNeutral = trend === 0;
 
@@ -30,14 +31,14 @@ const StatCard = ({ title, value, prefix = "", suffix = "", trend, trendLabel, i
                 </div>
 
                 <div className={`rounded-xl bg-slate-800/50 p-3 border border-slate-700/50 group-hover:border-${color}-500/30 transition-colors`}>
-                    <Icon className={`h-6 w-6 text-${color}-400`} />
+                    <IconComponent className={`h-6 w-6 text-${color}-400`} />
                 </div>
             </div>
 
             <div className="mt-4 flex items-center gap-2">
                 <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${isPositive ? 'bg-emerald-500/10 text-emerald-400' :
-                        isNeutral ? 'bg-slate-500/10 text-slate-400' :
-                            'bg-rose-500/10 text-rose-400'
+                    isNeutral ? 'bg-slate-500/10 text-slate-400' :
+                        'bg-rose-500/10 text-rose-400'
                     }`}>
                     {isPositive ? <ArrowUpRight size={12} /> : isNeutral ? <Minus size={12} /> : <ArrowDownRight size={12} />}
                     {Math.abs(trend)}%

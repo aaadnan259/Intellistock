@@ -1,21 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 
 const InventoryList = () => {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        // Mock data for now, replace with API call later
-        // axios.get('http://localhost:8000/api/inventory/products/')
-        //   .then(res => setProducts(res.data));
-        setProducts([
-            { id: 1, name: 'Laptop', sku: 'LPT-001', price: 999.99, current_stock: 50 },
-            { id: 2, name: 'Mouse', sku: 'MSE-002', price: 29.99, current_stock: 200 },
-            { id: 3, name: 'Keyboard', sku: 'KBD-003', price: 59.99, current_stock: 150 },
-        ]);
-        setLoading(false);
-    }, []);
+    const [products] = useState([
+        { id: 1, name: 'Laptop', sku: 'LPT-001', price: 999.99, current_stock: 50 },
+        { id: 2, name: 'Mouse', sku: 'MSE-002', price: 29.99, current_stock: 200 },
+        { id: 3, name: 'Keyboard', sku: 'KBD-003', price: 59.99, current_stock: 150 },
+    ]);
+    const [loading] = useState(false);
 
     if (loading) return <div>Loading...</div>;
 

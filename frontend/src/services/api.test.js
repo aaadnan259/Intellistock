@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest';
 import { inventoryApi, forecastingApi } from './api';
 
 describe('API Service', () => {

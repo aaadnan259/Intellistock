@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '../utils/cn'; // Assuming we create a utility or use inline clsx
+
 
 const BentoGrid = ({ className, children }) => {
     return (

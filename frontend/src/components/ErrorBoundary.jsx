@@ -40,7 +40,7 @@ class ErrorBoundary extends React.Component {
                         {this.state.retryCount > 0 && ` (Retry attempt: ${this.state.retryCount})`}
                     </p>
 
-                    {process.env.NODE_ENV === 'development' && this.state.error && (
+                    {import.meta.env.DEV && this.state.error && (
                         <details className="mb-6 w-full max-w-lg">
                             <summary className="cursor-pointer text-sm text-slate-500 hover:text-slate-300 transition-colors">
                                 Show error details

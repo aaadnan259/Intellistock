@@ -18,7 +18,6 @@ const Dashboard = () => {
         products_with_forecasts: 0,
         health_status: 'healthy'
     });
-    const [recentSales, setRecentSales] = useState([]);
     const [topProducts, setTopProducts] = useState([]);
     const [salesTrend, setSalesTrend] = useState([]);
 
@@ -70,18 +69,7 @@ const Dashboard = () => {
         }).format(value);
     };
 
-    const getAccuracyColor = (val) => {
-        const percentage = val * 100;
-        if (percentage >= 80) return 'green';
-        if (percentage >= 70) return 'yellow';
-        return 'red';
-    };
 
-    const getHealthStatusColor = (status) => {
-        if (status === 'healthy') return 'green';
-        if (status === 'warning') return 'yellow';
-        return 'red';
-    };
 
     if (loading) {
         return (

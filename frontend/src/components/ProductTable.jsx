@@ -10,30 +10,28 @@ const ProductTable = ({ limit }) => {
     const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                setLoading(true);
+                const response = await inventoryApi.getProducts({
+                    limit: limit || 10,
+                    page: page
+                });
+                const data = response.data.results || response.data;
+                setProducts(Array.isArray(data) ? data : []);
+
+                if (response.data.count && limit) {
+                    setTotalPages(Math.ceil(response.data.count / limit));
+                }
+            } catch (error) {
+                console.error("Failed to fetch products:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchProducts();
     }, [limit, page]);
-
-    const fetchProducts = async () => {
-        try {
-            setLoading(true);
-            const response = await inventoryApi.getProducts({
-                limit: limit || 10, // Assuming backend supports limit/offset or similar
-                page: page
-            });
-            // Handle Django Rest Framework pagination format if applicable (results/count) or direct array
-            const data = response.data.results || response.data;
-            setProducts(Array.isArray(data) ? data : []);
-
-            if (response.data.count && limit) {
-                setTotalPages(Math.ceil(response.data.count / limit));
-            }
-        } catch (error) {
-            console.error("Failed to fetch products:", error);
-            // Fallback empty or mock if needed, for now just empty
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getStatusColor = (status) => {
         // Map backend status or logic to colors

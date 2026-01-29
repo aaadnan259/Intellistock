@@ -89,7 +89,7 @@ const WhatIfAnalysis = ({ productId }) => {
     // Build chart data
     const chartData = results?.comparison?.[0]?.adjusted_forecast.map((_, i) => {
         const point = { day: i + 1, Baseline: results.baseline_forecast[i] };
-        results.comparison.forEach((s, idx) => {
+        results.comparison.forEach((s) => {
             point[s.scenario_name] = s.adjusted_forecast[i];
         });
         return point;
