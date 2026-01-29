@@ -48,7 +48,7 @@ jobs:
       - name: Run linting
         working-directory: ./backend
         run: |
-          pip install flake8 black mypy
+          pip install flake8==7.3.0 black==26.1.0 mypy==1.19.1
           black --check .
           flake8 .
       
