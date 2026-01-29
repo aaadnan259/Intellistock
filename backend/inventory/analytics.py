@@ -295,6 +295,8 @@ class InventoryAnalytics:
 
             df = pd.DataFrame(list(daily_sales))
             df["date"] = pd.to_datetime(df["date"])
+            df["total"] = df["total"].astype(float)
+            df["units"] = df["units"].astype(int)
             df = df.sort_values("date")
 
         if df.empty:
