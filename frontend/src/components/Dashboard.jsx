@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Package, AlertTriangle, DollarSign, Target, Loader2, TrendingUp, Activity, Clock, ShoppingCart } from 'lucide-react';
 import api from '../services/api';
-// StatCard removed or kept if needed, but we are using BentoItems now. Keeping for reference if needed elsewhere.
 import StatCard from './StatCard';
 import { BentoGrid, BentoItem } from './BentoGrid';
 import ForecastSimulator from './ForecastSimulator';
