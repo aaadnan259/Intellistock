@@ -45,4 +45,4 @@ class SaleViewSet(viewsets.ModelViewSet):
     # Performance: Fetch related product in single query
     queryset = Sale.objects.select_related("product").all().order_by("-sale_date")
     serializer_class = SaleSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]

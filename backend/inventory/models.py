@@ -39,6 +39,8 @@ class Sale(models.Model):
                     )
 
                 sale_date = self.sale_date or timezone.now().date()
+                if isinstance(sale_date, datetime.datetime):
+                    sale_date = sale_date.date()
                 is_historical = sale_date < timezone.now().date()
 
                 if self.total_price is None:

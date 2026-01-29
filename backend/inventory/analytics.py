@@ -247,17 +247,57 @@ class InventoryAnalytics:
         """
         Calculate sales trends with moving average and trend analysis.
         """
+        from django.db import connection
+
         start_date = timezone.now().date() - timedelta(days=days)
 
-        daily_sales = (
-            Sale.objects.filter(sale_date__gte=start_date)
-            .annotate(date=TruncDate("sale_date"))
-            .values("date")
-            .annotate(total=Sum("total_price"), units=Sum("quantity"))
-            .order_by("date")
-        )
+        if connection.vendor == "sqlite":
+            sales_qs = Sale.objects.filter(sale_date__gte=start_date).values(
+                "sale_date",
+                "total_price",
+                "quantity",
+            )
+            if not sales_qs.exists():
+                return {
+                    "dates": [],
+                    "daily_sales": [],
+                    "daily_units": [],
+                    "moving_average": [],
+                    "trend": "insufficient_data",
+                    "trend_slope": 0,
+                }
 
-        if not daily_sales:
+            df = pd.DataFrame(list(sales_qs))
+            df["date"] = pd.to_datetime(df["sale_date"]).dt.normalize()
+            df = (
+                df.groupby("date", as_index=False)
+                .agg(total=("total_price", "sum"), units=("quantity", "sum"))
+                .sort_values("date")
+            )
+        else:
+            daily_sales = (
+                Sale.objects.filter(sale_date__gte=start_date)
+                .annotate(date=TruncDate("sale_date"))
+                .values("date")
+                .annotate(total=Sum("total_price"), units=Sum("quantity"))
+                .order_by("date")
+            )
+
+            if not daily_sales:
+                return {
+                    "dates": [],
+                    "daily_sales": [],
+                    "daily_units": [],
+                    "moving_average": [],
+                    "trend": "insufficient_data",
+                    "trend_slope": 0,
+                }
+
+            df = pd.DataFrame(list(daily_sales))
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date")
+
+        if df.empty:
             return {
                 "dates": [],
                 "daily_sales": [],
@@ -267,8 +307,6 @@ class InventoryAnalytics:
                 "trend_slope": 0,
             }
 
-        df = pd.DataFrame(list(daily_sales))
-        df["date"] = pd.to_datetime(df["date"])
         df = df.set_index("date")
 
         # Resample to daily, filling missing dates with 0
