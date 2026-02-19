@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import transaction, connection
+from django.utils import timezone
 import datetime
 
 
@@ -26,11 +27,7 @@ class Sale(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             with transaction.atomic():
-                from django.utils import timezone
-
                 # Lock row to prevent race conditions (skip on SQLite for tests)
-                from django.db import connection
-
                 if connection.vendor == "sqlite":
                     product = Product.objects.get(pk=self.product_id)
                 else:
