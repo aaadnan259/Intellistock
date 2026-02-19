@@ -68,10 +68,8 @@ def retrain_all_models(self):
                         products_skipped += 1
 
                 except Exception as e:
-                    pid = getattr(product, 'id', 'unknown')
-                    logger.warning(
-                        f"Error checking product {pid}: {e}"
-                    )
+                    pid = getattr(product, "id", "unknown")
+                    logger.warning(f"Error checking product {pid}: {e}")
                     continue
 
         logger.info(
