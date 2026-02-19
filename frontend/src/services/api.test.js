@@ -20,7 +20,7 @@ vi.mock('axios', () => ({
 }));
 
 // Now import the module under test
-import api, { inventoryApi, forecastingApi } from './api';
+import { inventoryApi, forecastingApi } from './api';
 
 describe('API Service', () => {
     // Existing tests
