@@ -14,6 +14,13 @@ from .models import Product, Sale
 
 
 class InventoryAnalytics:
+    # Mock category configuration
+    CATEGORY_BREAKDOWN = [
+        {"name": "Electronics", "multiplier": 1.2, "fixed_value": 45000},
+        {"name": "Accessories", "multiplier": 0.8, "fixed_value": 15000},
+        {"name": "General", "multiplier": 1.0, "use_total": True},
+    ]
+
     def calculate_turnover_ratio(self):
         """
         Calculate inventory turnover ratio by category.
@@ -42,23 +49,23 @@ class InventoryAnalytics:
 
         # Return category-based turnover
         # (mock categories since Product model doesn't have category field)
-        return [
-            {
-                "category": "Electronics",
-                "turnover_ratio": round(turnover * 1.2, 2),
-                "avg_inventory_value": 45000,
-            },
-            {
-                "category": "Accessories",
-                "turnover_ratio": round(turnover * 0.8, 2),
-                "avg_inventory_value": 15000,
-            },
-            {
-                "category": "General",
-                "turnover_ratio": round(turnover, 2),
-                "avg_inventory_value": float(total_inv_value),
-            },
-        ]
+        results = []
+        for cat in self.CATEGORY_BREAKDOWN:
+            avg_inv_value = (
+                float(total_inv_value)
+                if cat.get("use_total")
+                else cat.get("fixed_value", 0)
+            )
+
+            results.append(
+                {
+                    "category": cat["name"],
+                    "turnover_ratio": round(turnover * cat["multiplier"], 2),
+                    "avg_inventory_value": avg_inv_value,
+                }
+            )
+
+        return results
 
     def _build_abc_breakdown(self):
         """
