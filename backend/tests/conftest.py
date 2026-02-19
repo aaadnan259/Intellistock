@@ -8,7 +8,7 @@ import sys
 from unittest.mock import MagicMock
 
 try:
-    import mlflow
+    import mlflow  # noqa: F401
 except (ImportError, ModuleNotFoundError):
     # Mock mlflow and pkg_resources if they are missing or broken
     # pkg_resources is often the root cause of the failure in some environments
