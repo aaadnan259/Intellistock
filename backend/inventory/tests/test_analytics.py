@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 import pytest
 from django.utils import timezone
-from datetime import timedelta
+
 from inventory.analytics import InventoryAnalytics
 from inventory.models import Product, Sale
+
 
 @pytest.mark.django_db
 class TestAnalytics:
@@ -29,7 +32,7 @@ class TestAnalytics:
             name="Test Product",
             sku="TEST-SKU",
             price=10.0,
-            current_stock=100
+            current_stock=100,
         )
 
         # Create some sales
@@ -38,7 +41,7 @@ class TestAnalytics:
         Sale.objects.create(
             product=product,
             quantity=5,
-            sale_date=sale_date
+            sale_date=sale_date,
         )
 
         result = self.analytics.calculate_sales_trends()
