@@ -149,14 +149,15 @@ def log_model_artifact(model: Any, model_name: str = "model") -> None:
 
         if "Prophet" in model_class:
             # Prophet requires special serialization
+            import os
             import tempfile
             from prophet.serialize import model_to_json
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False
-            ) as f:
-                f.write(model_to_json(model))
-                mlflow.log_artifact(f.name, artifact_path=model_name)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                model_path = os.path.join(tmp_dir, "model.json")
+                with open(model_path, "w") as f:
+                    f.write(model_to_json(model))
+                mlflow.log_artifact(model_path, artifact_path=model_name)
         else:
             # statsmodels and sklearn-compatible models
             mlflow.sklearn.log_model(model, model_name)
