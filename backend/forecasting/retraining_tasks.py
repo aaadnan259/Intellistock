@@ -68,8 +68,9 @@ def retrain_all_models(self):
                         products_skipped += 1
 
                 except Exception as e:
+                    pid = getattr(product, 'id', 'unknown')
                     logger.warning(
-                        f"Error checking product {getattr(product, 'id', 'unknown')}: {e}"
+                        f"Error checking product {pid}: {e}"
                     )
                     continue
 
@@ -169,7 +170,8 @@ def check_model_drift(product) -> bool:
     """
     Check if model drift is detected for a product.
     Returns True if retraining is recommended.
-    Accepts a Product instance (optionally with 'total_sales_count' and 'recent_sales' prefetched).
+    Accepts a Product instance (optionally with 'total_sales_count'
+    and 'recent_sales' prefetched).
     """
     try:
         from inventory.models import Product, Sale
