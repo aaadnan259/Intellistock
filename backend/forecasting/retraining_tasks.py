@@ -119,9 +119,7 @@ def retrain_model(self, product_id: int):
                             "features": feature_cols,
                         }
                     )
-                    log_forecast_metrics(
-                        {"rmse": float(np.std(y - model.predict(X)))}
-                    )
+                    log_forecast_metrics({"rmse": float(np.std(y - model.predict(X)))})
         except Exception:
             pass  # MLflow optional
 
