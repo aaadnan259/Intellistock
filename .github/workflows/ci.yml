@@ -58,6 +58,7 @@ jobs:
           DATABASE_URL: postgres://intellistock:testpass@localhost:5432/intellistock_test
           REDIS_URL: redis://localhost:6379/0
           MLFLOW_ENABLED: "false"
+          SECRET_KEY: "test-secret-key"
         run: |
           pytest -v --cov=. --cov-report=xml
       
