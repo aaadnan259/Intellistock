@@ -5,7 +5,7 @@ from django.core.cache import cache
 from .analytics import InventoryAnalytics
 from .models import Product
 from forecasting.models import ModelAccuracy
-from django.db.models import Sum, F, Avg, Q
+from django.db.models import Sum, F, Avg, Q, Count
 
 
 class TurnoverAPI(APIView):
@@ -93,34 +93,29 @@ class DashboardStatsAPI(APIView):
         data = cache.get(cache_key)
 
         if not data:
-            # Total products
-            total_products = Product.objects.count()
-
-            # Low stock (threshold: 10 units)
-            low_stock = Product.objects.filter(
-                current_stock__gt=0, current_stock__lt=10
-            ).count()
-
-            # Out of stock
-            out_of_stock = Product.objects.filter(current_stock=0).count()
-
-            # Total inventory value
-            inv_value = (
-                Product.objects.aggregate(val=Sum(F("current_stock") * F("price")))[
-                    "val"
-                ]
-                or 0
+            # Combined product statistics in one query
+            product_stats = Product.objects.aggregate(
+                total_products=Count("id"),
+                low_stock=Count(
+                    "id", filter=Q(current_stock__gt=0, current_stock__lt=10)
+                ),
+                out_of_stock=Count("id", filter=Q(current_stock=0)),
+                inv_value=Sum(F("current_stock") * F("price")),
             )
 
-            # Average forecast accuracy (R² score from model metrics)
-            avg_acc = (
-                ModelAccuracy.objects.aggregate(Avg("r2_score"))["r2_score__avg"] or 0
+            total_products = product_stats["total_products"]
+            low_stock = product_stats["low_stock"]
+            out_of_stock = product_stats["out_of_stock"]
+            inv_value = product_stats["inv_value"] or 0
+
+            # Combined forecast metrics in one query
+            accuracy_stats = ModelAccuracy.objects.aggregate(
+                avg_acc=Avg("r2_score"),
+                products_with_forecasts=Count("product", distinct=True),
             )
 
-            # Products with forecasts
-            products_with_forecasts = (
-                ModelAccuracy.objects.values("product").distinct().count()
-            )
+            avg_acc = accuracy_stats["avg_acc"] or 0
+            products_with_forecasts = accuracy_stats["products_with_forecasts"]
 
             data = {
                 "total_products": total_products,
