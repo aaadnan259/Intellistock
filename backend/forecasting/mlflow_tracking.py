@@ -9,9 +9,6 @@ import logging
 from contextlib import contextmanager
 from typing import Any, Dict, Optional, Generator
 
-import mlflow
-from mlflow.tracking import MlflowClient
-
 from config.mlflow_config import mlflow_config
 
 logger = logging.getLogger(__name__)
@@ -28,6 +25,12 @@ def init_mlflow() -> None:
     if not mlflow_config.enabled:
         logger.info("MLflow tracking disabled")
         _initialized = True
+        return
+
+    try:
+        import mlflow
+    except ImportError:
+        logger.warning("MLflow not installed, tracking disabled")
         return
 
     mlflow.set_tracking_uri(mlflow_config.tracking_uri)
@@ -51,7 +54,7 @@ def track_forecast_run(
     model_type: str,
     run_name: Optional[str] = None,
     tags: Optional[Dict[str, str]] = None,
-) -> Generator[Optional[mlflow.ActiveRun], None, None]:
+) -> Generator[Optional[Any], None, None]:
     """
     Context manager for tracking a forecast run.
 
@@ -70,6 +73,12 @@ def track_forecast_run(
         MLflow ActiveRun object or None if disabled
     """
     if not mlflow_config.enabled:
+        yield None
+        return
+
+    try:
+        import mlflow
+    except ImportError:
         yield None
         return
 
@@ -96,6 +105,11 @@ def log_forecast_params(params: Dict[str, Any]) -> None:
     if not mlflow_config.enabled:
         return
 
+    try:
+        import mlflow
+    except ImportError:
+        return
+
     for key, value in params.items():
         try:
             mlflow.log_param(key, value)
@@ -106,6 +120,11 @@ def log_forecast_params(params: Dict[str, Any]) -> None:
 def log_forecast_metrics(metrics: Dict[str, float]) -> None:
     """Log forecast metrics to active run."""
     if not mlflow_config.enabled:
+        return
+
+    try:
+        import mlflow
+    except ImportError:
         return
 
     for key, value in metrics.items():
@@ -125,6 +144,11 @@ def log_data_characteristics(
     if not mlflow_config.enabled:
         return
 
+    try:
+        import mlflow
+    except ImportError:
+        return
+
     mlflow.log_params(
         {
             "data_seasonality_score": round(seasonality_score, 4),
@@ -142,6 +166,11 @@ def log_model_artifact(model: Any, model_name: str = "model") -> None:
     Handles different model types (Prophet, sklearn-compatible).
     """
     if not mlflow_config.enabled:
+        return
+
+    try:
+        import mlflow
+    except ImportError:
         return
 
     try:
@@ -173,6 +202,11 @@ def log_forecast_plot(fig: Any, name: str = "forecast_plot") -> None:
         return
 
     try:
+        import mlflow
+    except ImportError:
+        return
+
+    try:
         mlflow.log_figure(fig, f"{name}.png")
     except Exception as e:
         logger.warning(f"Failed to log figure: {e}")
@@ -185,6 +219,12 @@ def get_best_model_for_product(product_id: int) -> Optional[str]:
     Returns the run_id of the best model based on MAE.
     """
     if not mlflow_config.enabled:
+        return None
+
+    try:
+        import mlflow
+        from mlflow.tracking import MlflowClient
+    except ImportError:
         return None
 
     init_mlflow()
