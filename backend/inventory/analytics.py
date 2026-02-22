@@ -4,6 +4,7 @@ from django.db.models import (
     F,
     Window,
     FloatField,
+    Max,
 )
 from django.db.models.functions import Coalesce, TruncDate, PercentRank
 from django.utils import timezone
@@ -211,16 +212,18 @@ class InventoryAnalytics:
             .distinct()
         )
 
-        slow_movers = Product.objects.exclude(id__in=active_products).filter(
-            current_stock__gt=0
+        slow_movers = (
+            Product.objects.exclude(id__in=active_products)
+            .filter(current_stock__gt=0)
+            .annotate(last_sale_date=Max("sales__sale_date"))
         )
 
         results = []
         for p in slow_movers:
-            last_sale = p.sales.order_by("-sale_date").first()
+            last_sale_date = p.last_sale_date
             days_no_sale = (
-                (timezone.now().date() - last_sale.sale_date).days
-                if last_sale
+                (timezone.now().date() - last_sale_date).days
+                if last_sale_date
                 else threshold_days + 30
             )
 
