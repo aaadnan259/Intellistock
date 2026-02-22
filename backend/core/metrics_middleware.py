@@ -60,11 +60,19 @@ class PrometheusMetricsMiddleware:
 
         This prevents high cardinality in metrics labels.
         """
-        parts = path.strip("/").split("/")
+        if not path or path == "/":
+            return "/"
+
+        # Split and filter out empty parts to handle consecutive slashes
+        parts = [p for p in path.strip("/").split("/") if p]
         normalized = []
         for part in parts:
             if part.isdigit():
                 normalized.append("{id}")
             else:
                 normalized.append(part)
-        return "/" + "/".join(normalized) + "/" if normalized else "/"
+
+        if not normalized:
+            return "/"
+
+        return "/" + "/".join(normalized) + "/"
