@@ -2,6 +2,26 @@
 Shared pytest fixtures for Intellistock test suite.
 """
 
+# Mock dependencies that might be missing or broken in test environments
+# This must happen before other imports that might use them
+import sys
+from unittest.mock import MagicMock
+
+try:
+    import mlflow  # noqa: F401
+except (ImportError, ModuleNotFoundError):
+    # Mock mlflow and pkg_resources if they are missing or broken
+    # pkg_resources is often the root cause of the failure in some environments
+    sys.modules["mlflow"] = MagicMock()
+    sys.modules["mlflow.tracking"] = MagicMock()
+    sys.modules["mlflow.models"] = MagicMock()
+    sys.modules["mlflow.utils"] = MagicMock()
+    sys.modules["mlflow.utils.environment"] = MagicMock()
+    sys.modules["mlflow.utils.requirements_utils"] = MagicMock()
+
+    if "pkg_resources" not in sys.modules:
+        sys.modules["pkg_resources"] = MagicMock()
+
 import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal

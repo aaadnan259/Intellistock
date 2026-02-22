@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -82,6 +83,8 @@ class AdvancedForecastAPI(APIView):
 
 
 class BatchForecastAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         product_ids = request.data.get("product_ids", [])
         days = int(request.data.get("days", 30))
@@ -89,6 +92,18 @@ class BatchForecastAPI(APIView):
         if not product_ids:
             return Response(
                 {"error": "No product_ids provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(product_ids) > 100:
+            return Response(
+                {"error": "Too many products provided. Maximum is 100."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if days < 1 or days > 90:
+            return Response(
+                {"error": "Days must be between 1 and 90."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Trigger Celery Task
