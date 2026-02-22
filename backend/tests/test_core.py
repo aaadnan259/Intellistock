@@ -71,6 +71,10 @@ class TestInventoryFlow:
 class TestAnalytics:
     def setup_method(self):
         self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="analytics_user", password="password"
+        )
+        self.client.force_authenticate(user=self.user)
         # Create test products
         self.products = []
         for i in range(5):
@@ -146,6 +150,10 @@ class TestAnalytics:
 class TestForecasting:
     def setup_method(self):
         self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="forecast_user", password="password"
+        )
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(
             name="Forecast Test Product",
             sku="FCAST-001",

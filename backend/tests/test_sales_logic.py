@@ -9,6 +9,10 @@ from django.urls import reverse
 class TestSalesLogic:
     def setup_method(self):
         self.client = APIClient()
+        from django.contrib.auth.models import User
+
+        self.user = User.objects.create_user(username="sales_user", password="password")
+        self.client.force_authenticate(user=self.user)
         self.product = Product.objects.create(
             name="Test Widget",
             sku="WIDGET-X",
