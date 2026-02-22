@@ -250,6 +250,16 @@ class InventoryAnalytics:
 
         return sorted(results, key=lambda x: x["days_no_sale"], reverse=True)
 
+    def _get_empty_sales_trends_response(self):
+        return {
+            "dates": [],
+            "daily_sales": [],
+            "daily_units": [],
+            "moving_average": [],
+            "trend": "insufficient_data",
+            "trend_slope": 0,
+        }
+
     def calculate_sales_trends(self, days=90):
         """
         Calculate sales trends with moving average and trend analysis.
@@ -265,14 +275,7 @@ class InventoryAnalytics:
                 "quantity",
             )
             if not sales_qs.exists():
-                return {
-                    "dates": [],
-                    "daily_sales": [],
-                    "daily_units": [],
-                    "moving_average": [],
-                    "trend": "insufficient_data",
-                    "trend_slope": 0,
-                }
+                return self._get_empty_sales_trends_response()
 
             df = pd.DataFrame(list(sales_qs))
             df["date"] = pd.to_datetime(df["sale_date"]).dt.normalize()
@@ -291,14 +294,7 @@ class InventoryAnalytics:
             )
 
             if not daily_sales:
-                return {
-                    "dates": [],
-                    "daily_sales": [],
-                    "daily_units": [],
-                    "moving_average": [],
-                    "trend": "insufficient_data",
-                    "trend_slope": 0,
-                }
+                return self._get_empty_sales_trends_response()
 
             df = pd.DataFrame(list(daily_sales))
             df["date"] = pd.to_datetime(df["date"])
@@ -307,14 +303,7 @@ class InventoryAnalytics:
             df = df.sort_values("date")
 
         if df.empty:
-            return {
-                "dates": [],
-                "daily_sales": [],
-                "daily_units": [],
-                "moving_average": [],
-                "trend": "insufficient_data",
-                "trend_slope": 0,
-            }
+            return self._get_empty_sales_trends_response()
 
         df = df.set_index("date")
 
