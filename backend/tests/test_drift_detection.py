@@ -4,6 +4,7 @@ import pandas as pd
 from unittest.mock import MagicMock, patch
 from forecasting.drift_detection import DriftDetector, DriftReport
 
+
 class TestDriftDetector(unittest.TestCase):
     def setUp(self):
         self.detector = DriftDetector()
@@ -11,10 +12,7 @@ class TestDriftDetector(unittest.TestCase):
         # Sample data setup
         self.dates = [datetime(2023, 1, 1) + timedelta(days=i) for i in range(20)]
         self.quantities = [10 + i for i in range(20)]
-        self.data = pd.DataFrame({
-            "sale_date": self.dates,
-            "quantity": self.quantities
-        })
+        self.data = pd.DataFrame({"sale_date": self.dates, "quantity": self.quantities})
 
     def test_prepare_data_structure(self):
         """Test that prepare_data adds required columns and returns correct structure."""
@@ -61,7 +59,10 @@ class TestDriftDetector(unittest.TestCase):
         empty_df = pd.DataFrame({"sale_date": [], "quantity": []})
         result = self.detector.prepare_data(empty_df)
         self.assertTrue(result.empty)
-        self.assertListEqual(sorted(list(result.columns)), sorted(["quantity", "day_of_week", "month", "lag_7", "rolling_mean_7"]))
+        self.assertListEqual(
+            sorted(list(result.columns)),
+            sorted(["quantity", "day_of_week", "month", "lag_7", "rolling_mean_7"]),
+        )
 
     @patch("forecasting.drift_detection.DatasetDriftMetric")
     @patch("forecasting.drift_detection.Report")
@@ -70,16 +71,18 @@ class TestDriftDetector(unittest.TestCase):
         # Setup mocks
         mock_report_instance = MockReport.return_value
         mock_report_instance.as_dict.return_value = {
-            "metrics": [{
-                "result": {
-                    "dataset_drift": True,
-                    "share_of_drifted_columns": 0.6,
-                    "drift_by_columns": {
-                        "quantity": {"drift_detected": True, "drift_score": 0.8},
-                        "lag_7": {"drift_detected": False, "drift_score": 0.1}
+            "metrics": [
+                {
+                    "result": {
+                        "dataset_drift": True,
+                        "share_of_drifted_columns": 0.6,
+                        "drift_by_columns": {
+                            "quantity": {"drift_detected": True, "drift_score": 0.8},
+                            "lag_7": {"drift_detected": False, "drift_score": 0.1},
+                        },
                     }
                 }
-            }]
+            ]
         }
 
         result = self.detector.detect_drift(self.data, self.data, product_id=1)
@@ -101,8 +104,9 @@ class TestDriftDetector(unittest.TestCase):
     def test_detect_drift_missing_dependencies(self):
         """Test graceful degradation when evidently is missing."""
         # Force the module-level variables to be None for this test
-        with patch("forecasting.drift_detection.DatasetDriftMetric", None), \
-             patch("forecasting.drift_detection.Report", None):
+        with patch("forecasting.drift_detection.DatasetDriftMetric", None), patch(
+            "forecasting.drift_detection.Report", None
+        ):
             result = self.detector.detect_drift(self.data, self.data, product_id=1)
 
         self.assertFalse(result.data_drift_detected)
