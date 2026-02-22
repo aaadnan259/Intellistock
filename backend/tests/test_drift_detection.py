@@ -15,7 +15,7 @@ class TestDriftDetector(unittest.TestCase):
         self.data = pd.DataFrame({"sale_date": self.dates, "quantity": self.quantities})
 
     def test_prepare_data_structure(self):
-        """Test that prepare_data adds required columns and returns correct structure."""
+        """Test that prepare_data adds required columns and returns structure."""
         df = self.detector.prepare_data(self.data)
 
         # Check columns
