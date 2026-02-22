@@ -23,25 +23,54 @@ def retrain_all_models(self):
     one giant locking transaction.
     """
     try:
-        from inventory.models import Product
+        from inventory.models import Product, Sale
+        from django.db.models import Count, Prefetch
+        from datetime import timedelta
 
         logger.info("Starting automated model retraining...")
         products_retrained = 0
         products_skipped = 0
 
-        for product in Product.objects.filter(is_active=True):
-            try:
-                should_retrain = check_model_drift(product.id)
+        # Optimization: Pre-fetch sales data to avoid N+1 query problem
+        # We need sales from the last 74 days (60 days reference + 14 days current)
+        today = datetime.now()
+        reference_start = today - timedelta(days=74)
 
-                if should_retrain:
-                    retrain_model.delay(product.id)
-                    products_retrained += 1
-                else:
-                    products_skipped += 1
+        recent_sales_qs = Sale.objects.filter(
+            sale_date__gte=reference_start.date()
+        ).order_by("sale_date")
 
-            except Exception as e:
-                logger.warning(f"Error checking product {product.id}: {e}")
-                continue
+        # Note: 'is_active' field does not exist on Product, so we removed the filter.
+        # Use pagination to process products in chunks to avoid memory issues
+        from django.core.paginator import Paginator
+        from django.db.models import prefetch_related_objects
+
+        qs = Product.objects.annotate(total_sales_count=Count("sales")).order_by("id")
+        paginator = Paginator(qs, 1000)
+
+        for page_num in paginator.page_range:
+            page_products = list(paginator.page(page_num).object_list)
+
+            # Prefetch sales for the current chunk
+            prefetch_related_objects(
+                page_products,
+                Prefetch("sales", queryset=recent_sales_qs, to_attr="recent_sales"),
+            )
+
+            for product in page_products:
+                try:
+                    should_retrain = check_model_drift(product)
+
+                    if should_retrain:
+                        retrain_model.delay(product.id)
+                        products_retrained += 1
+                    else:
+                        products_skipped += 1
+
+                except Exception as e:
+                    pid = getattr(product, "id", "unknown")
+                    logger.warning(f"Error checking product {pid}: {e}")
+                    continue
 
         logger.info(
             f"Retraining queued: {products_retrained}, Skipped: {products_skipped}"
@@ -139,10 +168,12 @@ def retrain_model(self, product_id: int):
         raise self.retry(exc=e, countdown=60 * 2)
 
 
-def check_model_drift(product_id: int) -> bool:
+def check_model_drift(product) -> bool:
     """
     Check if model drift is detected for a product.
     Returns True if retraining is recommended.
+    Accepts a Product instance (optionally with 'total_sales_count'
+    and 'recent_sales' prefetched).
     """
     try:
         from inventory.models import Product, Sale
@@ -150,18 +181,47 @@ def check_model_drift(product_id: int) -> bool:
         from datetime import timedelta
         import pandas as pd
 
-        product = Product.objects.get(pk=product_id)
-        sales = Sale.objects.filter(product=product).values("sale_date", "quantity")
+        # Backward compatibility or fallback if product is an ID
+        if isinstance(product, int):
+            product_id = product
+            product = Product.objects.get(pk=product_id)
+        else:
+            product_id = product.id
 
-        if len(sales) < 60:
+        # Use annotated count if available, otherwise query
+        total_sales_count = getattr(product, "total_sales_count", None)
+        if total_sales_count is None:
+            total_sales_count = Sale.objects.filter(product=product).count()
+
+        if total_sales_count < 60:
             return False
-
-        df = pd.DataFrame(list(sales))
-        df["sale_date"] = pd.to_datetime(df["sale_date"])
 
         today = datetime.now()
         cutoff = today - timedelta(days=14)
         reference_start = today - timedelta(days=74)
+
+        # Use prefetched sales if available
+        if hasattr(product, "recent_sales"):
+            # recent_sales is a list of Sale objects (due to to_attr)
+            # We need to convert it to a list of dicts for DataFrame
+            sales_data = [
+                {"sale_date": s.sale_date, "quantity": s.quantity}
+                for s in product.recent_sales
+            ]
+            df = pd.DataFrame(sales_data)
+        else:
+            # Fallback to querying if recent_sales not available
+            # We filter by reference_start to be consistent with prefetch logic
+            # but original code fetched ALL sales.
+            sales = Sale.objects.filter(
+                product=product, sale_date__gte=reference_start.date()
+            ).values("sale_date", "quantity")
+            df = pd.DataFrame(list(sales))
+
+        if df.empty:
+            return False
+
+        df["sale_date"] = pd.to_datetime(df["sale_date"])
 
         current_data = df[df["sale_date"] >= cutoff]
         reference_data = df[
@@ -177,7 +237,10 @@ def check_model_drift(product_id: int) -> bool:
         return report.action_required
 
     except Exception as e:
-        logger.warning(f"Error checking drift for {product_id}: {e}")
+        # product might be int or object
+        pid = product if isinstance(product, int) else getattr(product, "id", -1)
+        pid_str = "unknown" if pid == -1 else str(pid)
+        logger.warning(f"Error checking drift for {pid_str}: {e}")
         return False
 
 
