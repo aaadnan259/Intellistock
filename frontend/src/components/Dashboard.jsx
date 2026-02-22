@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Package, AlertTriangle, DollarSign, Target, Loader2, TrendingUp, Activity, Clock, ShoppingCart } from 'lucide-react';
 import api from '../services/api';
-import StatCard from './StatCard';
 import { BentoGrid, BentoItem } from './BentoGrid';
 import ForecastSimulator from './ForecastSimulator';
 import InventoryHeatmap from './InventoryHeatmap';
