@@ -3,8 +3,8 @@ from decouple import config, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Security: use a safe default in CI/tests to avoid hard failures.
-SECRET_KEY = config("SECRET_KEY", default="insecure-test-key")
+# Security: SECRET_KEY must be set in the environment.
+SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="localhost,127.0.0.1")
 
