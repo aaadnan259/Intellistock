@@ -227,24 +227,4 @@ const Dashboard = () => {
 };
 
 
-// Status Item Component
-const StatusItem = ({ label, status }) => {
-    const statusConfig = {
-        online: { color: 'bg-green-500', text: 'Online' },
-        active: { color: 'bg-blue-500 animate-pulse', text: 'Active' },
-        idle: { color: 'bg-slate-400', text: 'Idle' },
-        offline: { color: 'bg-red-500', text: 'Offline' }
-    };
-
-    const config = statusConfig[status] || statusConfig.offline;
-
-    return (
-        <div className="flex items-center gap-2">
-            <div className={`h-2.5 w-2.5 rounded-full ${config.color}`}></div>
-            <span className="text-sm text-slate-600 flex-1">{label}</span>
-            <span className="text-xs text-slate-500">{config.text}</span>
-        </div>
-    );
-};
-
 export default Dashboard;
