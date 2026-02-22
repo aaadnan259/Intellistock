@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 import pandas as pd
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from forecasting.drift_detection import DriftDetector, DriftReport
 
 
@@ -36,7 +36,8 @@ class TestDriftDetector(unittest.TestCase):
         quantities = df["quantity"].values
         # Ensure strictly increasing (or at least non-decreasing)
         self.assertTrue((quantities[:-1] <= quantities[1:]).all())
-        # First value should be the 8th value (index 7) from original sorted data: 10 + 7 = 17
+        # First value should be the 8th value (index 7) from original sorted data:
+        # 10 + 7 = 17
         self.assertEqual(quantities[0], 17)
 
     def test_prepare_data_calculations(self):
@@ -59,9 +60,16 @@ class TestDriftDetector(unittest.TestCase):
         empty_df = pd.DataFrame({"sale_date": [], "quantity": []})
         result = self.detector.prepare_data(empty_df)
         self.assertTrue(result.empty)
+        expected_columns = [
+            "quantity",
+            "day_of_week",
+            "month",
+            "lag_7",
+            "rolling_mean_7",
+        ]
         self.assertListEqual(
             sorted(list(result.columns)),
-            sorted(["quantity", "day_of_week", "month", "lag_7", "rolling_mean_7"]),
+            sorted(expected_columns),
         )
 
     @patch("forecasting.drift_detection.DatasetDriftMetric")
@@ -104,10 +112,9 @@ class TestDriftDetector(unittest.TestCase):
     def test_detect_drift_missing_dependencies(self):
         """Test graceful degradation when evidently is missing."""
         # Force the module-level variables to be None for this test
-        with patch("forecasting.drift_detection.DatasetDriftMetric", None), patch(
-            "forecasting.drift_detection.Report", None
-        ):
-            result = self.detector.detect_drift(self.data, self.data, product_id=1)
+        with patch("forecasting.drift_detection.DatasetDriftMetric", None):
+            with patch("forecasting.drift_detection.Report", None):
+                result = self.detector.detect_drift(self.data, self.data, product_id=1)
 
         self.assertFalse(result.data_drift_detected)
         self.assertIn("DRIFT CHECK DISABLED", result.recommendation)
