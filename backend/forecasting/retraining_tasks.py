@@ -101,21 +101,25 @@ def retrain_model(self, product_id: int):
 
         # Log to MLflow (if available)
         try:
-            from forecasting.mlflow_config import experiment_tracker
+            from forecasting.mlflow_tracking import (
+                track_forecast_run,
+                log_forecast_params,
+                log_forecast_metrics,
+            )
 
-            with experiment_tracker.start_run(
-                run_name=f"auto_retrain_{product_id}_{datetime.now():%Y%m%d}"
-            ):
-                experiment_tracker.log_params(
-                    {
-                        "product_id": product_id,
-                        "n_samples": len(X),
-                        "features": feature_cols,
-                    }
-                )
-                experiment_tracker.log_metric(
-                    "rmse", float(np.std(y - model.predict(X)))
-                )
+            with track_forecast_run(
+                product_id=product_id,
+                model_type="GradientBoostingRegressor",
+                run_name=f"auto_retrain_{product_id}_{datetime.now():%Y%m%d}",
+            ) as run:
+                if run:
+                    log_forecast_params(
+                        {
+                            "n_samples": len(X),
+                            "features": feature_cols,
+                        }
+                    )
+                    log_forecast_metrics({"rmse": float(np.std(y - model.predict(X)))})
         except Exception:
             pass  # MLflow optional
 
