@@ -6,7 +6,6 @@ import {
     BarChart2,
     ChevronLeft,
     ChevronRight,
-    Settings,
     LogOut
 } from 'lucide-react';
 
