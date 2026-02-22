@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAdminUser
 from django.core.cache import cache
 from .analytics import InventoryAnalytics
 from .models import Product
@@ -196,8 +197,9 @@ class TopProductsAPI(APIView):
 class ClearCacheAPI(APIView):
     """Clear analytics cache (admin only)."""
 
+    permission_classes = [IsAdminUser]
+
     def post(self, request):
-        # In production, add proper authentication check
         # cache_keys list removed (unused)
 
         # Note: This is a simplified version.
