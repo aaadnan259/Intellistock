@@ -100,7 +100,9 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(result.dataset_drift_score, 0.6)
         self.assertIn("quantity", result.drifted_features)
 
-    def test_detect_drift_insufficient_data(self):
+    @patch("forecasting.drift_detection.DatasetDriftMetric")
+    @patch("forecasting.drift_detection.Report")
+    def test_detect_drift_insufficient_data(self, MockReport, MockMetric):
         """Test drift detection with insufficient data."""
         # Need at least 10 rows for ref and 5 for current
         short_data = self.data.iloc[:5]
