@@ -3,12 +3,18 @@ from decimal import Decimal
 from rest_framework.test import APIClient
 from inventory.models import Product, Sale
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 
 @pytest.mark.django_db
 class TestSalesLogic:
     def setup_method(self):
         self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="sales_logic_user", password="password"
+        )
+        self.client.force_authenticate(user=self.user)
+
         self.product = Product.objects.create(
             name="Test Widget",
             sku="WIDGET-X",
