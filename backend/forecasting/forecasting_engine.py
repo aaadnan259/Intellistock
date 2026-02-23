@@ -101,7 +101,7 @@ class ForecastingEngine:
 
         return df
 
-    def analyze_product_data(self, product_id):
+    def analyze_product_data(self, product_id, df=None):
         """
         Compute stats that help us pick a model:
         - seasonality: autocorrelation at lag 7 (weekly pattern)
@@ -111,7 +111,9 @@ class ForecastingEngine:
         These thresholds were tuned by trial and error on ~50 product histories.
         They're not magic numbers, just what worked reasonably well.
         """
-        df = self._get_sales_df(product_id)
+        if df is None:
+            df = self._get_sales_df(product_id)
+
         if df is None or len(df) < config.min_data_points:
             return None
 
@@ -349,6 +351,75 @@ class ForecastingEngine:
             "mape": mean_absolute_percentage_error(y_true, y_pred),
         }
 
+    def _load_validated_data(self, product_id):
+        """Fetch and validate data for forecasting."""
+        df = self._get_sales_df(product_id)
+        if df is None:
+            return None, {"error": "Insufficient data"}
+
+        try:
+            validate_before_forecast(
+                df, product_id, min_data_points=config.min_data_points
+            )
+            return df, None
+        except DataValidationError as e:
+            return None, {"error": str(e)}
+
+    def _determine_model_strategy(self, product_id, df, model_type):
+        """Analyze data and determine the best model strategy."""
+        chars = self.analyze_product_data(product_id, df=df)
+
+        if model_type == "auto":
+            model_type, reason = self.select_best_model(chars)
+        else:
+            reason = "User selection"
+
+        return model_type, reason, chars
+
+    def _run_backtest(self, model_type, train_df, test_df, days):
+        """Run backtest on training data and calculate metrics."""
+        if model_type == "prophet":
+            bt_res = self.forecast_prophet(train_df, days=days)
+        elif model_type == "arima":
+            bt_res = self.forecast_arima(train_df, days=days)
+        elif model_type == "exponential":
+            bt_res = self.forecast_exponential_smoothing(train_df, days=days)
+        else:  # ensemble
+            bt_res = self.forecast_ensemble(train_df, days=days)
+
+        bt_values = [x["value"] for x in bt_res]
+        metrics = self.calculate_accuracy_metrics(test_df["y"].values, bt_values)
+
+        log_forecast_metrics(
+            {
+                "mae": metrics.get("mae", 0),
+                "mape": metrics.get("mape", 0),
+                "r2": metrics.get("r2", 0),
+            }
+        )
+        return metrics
+
+    def _generate_final_forecast(self, model_type, df, days):
+        """Generate the final forecast on the full dataset."""
+        if model_type == "prophet":
+            final_res = self.forecast_prophet(df, days)
+        elif model_type == "arima":
+            final_res = self.forecast_arima(df, days)
+        elif model_type == "exponential":
+            final_res = self.forecast_exponential_smoothing(df, days)
+        else:
+            final_res = self.forecast_ensemble(df, days)
+
+        if final_res:
+            forecast_values = [x["value"] for x in final_res]
+            log_forecast_metrics(
+                {
+                    "forecast_mean": float(np.mean(forecast_values)),
+                    "forecast_std": float(np.std(forecast_values)),
+                }
+            )
+        return final_res
+
     def generate_forecast(self, product_id, days=30, model_type="auto"):
         """
         Main entry point. Gets historical data, picks a model, trains it,
@@ -357,34 +428,19 @@ class ForecastingEngine:
         model_override lets you force a specific model ("prophet", "arima", etc.)
         if you want to compare or know something we don't.
         """
-        df = self._get_sales_df(product_id)
-        if df is None:
-            return {"error": "Insufficient data"}
+        df, error = self._load_validated_data(product_id)
+        if error:
+            return error
 
-        # Validate data before proceeding
-        try:
-            validate_before_forecast(
-                df, product_id, min_data_points=config.min_data_points
-            )
-        except DataValidationError as e:
-            return {"error": str(e)}
-
-        # Split for validation if needed, but for future forecast we train on all
-        # To get metrics, we usually backtest. For MVP, train on all data.
-        # UNLESS we need metrics returned to API.
+        # Split for validation if needed
         # Simple 80/20 split backtest, calculate metrics, then retrain on all.
-
         train_size = int(len(df) * config.validation_split)
         train_df = df.iloc[:train_size]
         test_df = df.iloc[train_size:]
 
-        # Determine model
-        if model_type == "auto":
-            chars = self.analyze_product_data(product_id)
-            model_type, reason = self.select_best_model(chars)
-        else:
-            chars = self.analyze_product_data(product_id)
-            reason = "User selection"
+        model_type, reason, chars = self._determine_model_strategy(
+            product_id, df, model_type
+        )
 
         # MLflow tracking context
         with track_forecast_run(product_id=product_id, model_type=model_type) as run:
@@ -411,48 +467,10 @@ class ForecastingEngine:
                 )
 
             # 1. Backtest for accuracy metrics
-            if model_type == "prophet":
-                bt_res = self.forecast_prophet(train_df, days=len(test_df))
-            elif model_type == "arima":
-                bt_res = self.forecast_arima(train_df, days=len(test_df))
-            elif model_type == "exponential":
-                bt_res = self.forecast_exponential_smoothing(
-                    train_df, days=len(test_df)
-                )
-            else:  # ensemble
-                bt_res = self.forecast_ensemble(train_df, days=len(test_df))
-
-            bt_values = [x["value"] for x in bt_res]
-            metrics = self.calculate_accuracy_metrics(test_df["y"].values, bt_values)
-
-            # Log backtest metrics to MLflow
-            log_forecast_metrics(
-                {
-                    "mae": metrics.get("mae", 0),
-                    "mape": metrics.get("mape", 0),
-                    "r2": metrics.get("r2", 0),
-                }
-            )
+            metrics = self._run_backtest(model_type, train_df, test_df, len(test_df))
 
             # 2. Final Forecast
-            if model_type == "prophet":
-                final_res = self.forecast_prophet(df, days)
-            elif model_type == "arima":
-                final_res = self.forecast_arima(df, days)
-            elif model_type == "exponential":
-                final_res = self.forecast_exponential_smoothing(df, days)
-            else:
-                final_res = self.forecast_ensemble(df, days)
-
-            # Log forecast summary metrics
-            if final_res:
-                forecast_values = [x["value"] for x in final_res]
-                log_forecast_metrics(
-                    {
-                        "forecast_mean": float(np.mean(forecast_values)),
-                        "forecast_std": float(np.std(forecast_values)),
-                    }
-                )
+            final_res = self._generate_final_forecast(model_type, df, days)
 
             mlflow_run_id = run.info.run_id if run else None
 
