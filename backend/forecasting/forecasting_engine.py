@@ -14,6 +14,7 @@ import numpy as np
 from datetime import timedelta
 from django.db.models import Sum
 from inventory.models import Sale
+from forecasting.models import ForecastResult, ModelAccuracy
 from prophet import Prophet
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
@@ -462,3 +463,41 @@ class ForecastingEngine:
             "reason": reason,
             "mlflow_run_id": mlflow_run_id,
         }
+
+    def save_forecast(self, product, result, characteristics=None):
+        """
+        Saves the forecast results and accuracy metrics to the database.
+
+        Args:
+            product: The product instance to save forecast for.
+            result (dict): The result dictionary from generate_forecast.
+            characteristics (dict, optional): Characteristics data for sample size.
+        """
+        # Save Forecast Results
+        forecast_data = result["forecast"]
+        for item in forecast_data:
+            ForecastResult.objects.update_or_create(
+                product=product,
+                forecast_date=item["date"],
+                defaults={
+                    "predicted_value": item["value"],
+                    "confidence_lower": item["lower"],
+                    "confidence_upper": item["upper"],
+                    "model_used": result["model_used"],
+                },
+            )
+
+        # Save Metrics
+        metrics = result["metrics"]
+        sample_size = characteristics.get("days_count", 0) if characteristics else 0
+
+        ModelAccuracy.objects.update_or_create(
+            product=product,
+            model_name=result["model_used"],
+            defaults={
+                "r2_score": metrics["r2"],
+                "mae": metrics["mae"],
+                "mape": metrics["mape"],
+                "sample_size": sample_size,
+            },
+        )
