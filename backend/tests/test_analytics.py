@@ -180,8 +180,8 @@ class TestSalesTrends:
         analytics = InventoryAnalytics()
 
         # Patch connection.vendor to ensure we use the 'else' path (Postgres logic)
-        # Note: This executes the Django ORM aggregation logic against the test DB (sqlite),
-        # which supports the operations used (TruncDate, Sum).
+        # Note: This executes the Django ORM aggregation logic against the test DB
+        # (sqlite), which supports the operations used (TruncDate, Sum).
         with patch("django.db.connection.vendor", "postgresql"):
             result = analytics.calculate_sales_trends(days=90)
 
@@ -205,7 +205,8 @@ class TestSalesTrends:
         assert result["period_total"] == 0
 
     def test_sales_trends_single_point(self, db):
-        """Test trend calculation with a single data point (should handle linear regression edge case)."""
+        """Test trend calculation with a single data point
+        (should handle linear regression edge case)."""
         product = Product.objects.create(
             name="Single Sale Product",
             sku="SINGLE-001",
