@@ -22,7 +22,7 @@ class Sale(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sales")
     quantity = models.PositiveIntegerField()
     total_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True)
-    sale_date = models.DateField(default=datetime.date.today, db_index=True)
+    sale_date = models.DateField(default=timezone.localdate, db_index=True)
 
     def save(self, *args, **kwargs):
         if not self.pk:
