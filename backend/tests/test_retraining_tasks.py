@@ -1,10 +1,9 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from django.test import TestCase
 from forecasting.retraining_tasks import retrain_model
-from inventory.models import Product, Sale
+
 
 class TestRetrainingTasks(TestCase):
-
     @patch("forecasting.forecasting_engine.ForecastingEngine")
     def test_retrain_model_delegates_to_engine(self, mock_engine_cls):
         """
@@ -19,7 +18,7 @@ class TestRetrainingTasks(TestCase):
             "metrics": expected_metrics,
             "model_used": "prophet",
             "reason": "seasonality",
-            "mlflow_run_id": "run-123"
+            "mlflow_run_id": "run-123",
         }
 
         product_id = 123
