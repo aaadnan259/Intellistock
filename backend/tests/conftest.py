@@ -22,11 +22,15 @@ except (ImportError, ModuleNotFoundError):
     if "pkg_resources" not in sys.modules:
         sys.modules["pkg_resources"] = MagicMock()
 
+try:
+    import pandas as pd
+except ImportError:
+    sys.modules["pandas"] = MagicMock()
+    import pandas as pd
+
 import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
-
-import pandas as pd
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 
