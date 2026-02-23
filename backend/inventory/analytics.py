@@ -271,8 +271,7 @@ class InventoryAnalytics:
 
         daily_sales = (
             Sale.objects.filter(sale_date__gte=start_date)
-            .annotate(date=TruncDate("sale_date"))
-            .values("date")
+            .values(date=F("sale_date"))
             .annotate(total=Sum("total_price"), units=Sum("quantity"))
             .order_by("date")
         )
