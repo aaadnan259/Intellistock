@@ -6,7 +6,7 @@ from django.db.models import (
     FloatField,
     Max,
 )
-from django.db.models.functions import Coalesce, TruncDate, PercentRank
+from django.db.models.functions import Coalesce, PercentRank
 from django.utils import timezone
 from datetime import timedelta
 import pandas as pd
