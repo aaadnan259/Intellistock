@@ -94,75 +94,27 @@ def retrain_model(self, product_id: int):
     Retrain the forecasting model for a specific product.
     """
     try:
-        from inventory.models import Product, Sale
-        from sklearn.ensemble import GradientBoostingRegressor
-        import pandas as pd
-        import numpy as np
+        from forecasting.forecasting_engine import ForecastingEngine
 
         logger.info(f"Retraining model for product {product_id}")
 
-        product = Product.objects.get(pk=product_id)
-        sales = Sale.objects.filter(product=product).values("sale_date", "quantity")
+        engine = ForecastingEngine()
+        result = engine.generate_forecast(product_id, days=30)
 
-        if len(sales) < 30:
-            return {"status": "skipped", "reason": "insufficient_data"}
-
-        df = pd.DataFrame(list(sales))
-        df["sale_date"] = pd.to_datetime(df["sale_date"])
-        df = df.sort_values("sale_date")
-
-        # Feature engineering
-        df["day_of_week"] = df["sale_date"].dt.dayofweek
-        df["month"] = df["sale_date"].dt.month
-        df["lag_7"] = df["quantity"].shift(7)
-        df["rolling_mean_7"] = df["quantity"].rolling(7).mean()
-        df = df.dropna()
-
-        feature_cols = ["day_of_week", "month", "lag_7", "rolling_mean_7"]
-        X = df[feature_cols]
-        y = df["quantity"]
-
-        # Train model
-        model = GradientBoostingRegressor(
-            n_estimators=100, max_depth=4, random_state=42
-        )
-        model.fit(X, y)
-
-        # Log to MLflow (if available)
-        try:
-            from forecasting.mlflow_tracking import (
-                track_forecast_run,
-                log_forecast_params,
-                log_forecast_metrics,
-            )
-
-            with track_forecast_run(
-                product_id=product_id,
-                model_type="GradientBoostingRegressor",
-                run_name=f"auto_retrain_{product_id}_{datetime.now():%Y%m%d}",
-            ) as run:
-                if run:
-                    log_forecast_params(
-                        {
-                            "n_samples": len(X),
-                            "features": feature_cols,
-                        }
-                    )
-                    log_forecast_metrics({"rmse": float(np.std(y - model.predict(X)))})
-        except Exception:
-            pass  # MLflow optional
+        if "error" in result:
+            logger.warning(f"Retraining skipped for {product_id}: {result['error']}")
+            return {"status": "skipped", "reason": result["error"]}
 
         logger.info(f"Model retrained for product {product_id}")
 
         return {
             "status": "success",
             "product_id": product_id,
-            "samples": len(X),
+            "metrics": result.get("metrics"),
+            "model_used": result.get("model_used"),
             "timestamp": datetime.now().isoformat(),
         }
 
-    except Product.DoesNotExist:
-        return {"status": "error", "reason": "product_not_found"}
     except Exception as e:
         logger.exception(f"Error retraining model for product {product_id}")
         raise self.retry(exc=e, countdown=60 * 2)

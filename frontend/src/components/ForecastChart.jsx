@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     XAxis,
     YAxis,
@@ -18,12 +18,8 @@ import LoadingSkeleton from './LoadingSkeleton';
  * { date: string, value: number, lower: number, upper: number }
  */
 const ForecastChart = ({ data, loading }) => {
-    if (loading) {
-        return <LoadingSkeleton variant="chart" className="h-[400px] w-full" />;
-    }
-
     // Transform data to support area chart for confidence band
-    const chartData = (data || []).map((item, index) => ({
+    const chartData = useMemo(() => (data || []).map((item, index) => ({
         ...item,
         // Format date for display
         displayDate: typeof item.date === 'string'
@@ -34,7 +30,11 @@ const ForecastChart = ({ data, loading }) => {
         confidenceBand: item.upper - item.lower,
         // Index for animation
         index
-    }));
+    })), [data]);
+
+    if (loading) {
+        return <LoadingSkeleton variant="chart" className="h-[400px] w-full" />;
+    }
 
     if (chartData.length === 0) {
         return (

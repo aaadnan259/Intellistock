@@ -11,14 +11,8 @@ try:
     from evidently.metrics import DatasetDriftMetric
     from evidently.report import Report
 except ImportError:  # pragma: no cover - optional dependency/version drift
-    try:
-        from evidently.metrics.data_drift.dataset_drift_metric import (  # type: ignore
-            DatasetDriftMetric,
-        )
-        from evidently.report import Report  # type: ignore
-    except ImportError:
-        DatasetDriftMetric = None
-        Report = None
+    DatasetDriftMetric = None
+    Report = None
 
 logger = logging.getLogger(__name__)
 
