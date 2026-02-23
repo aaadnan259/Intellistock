@@ -292,7 +292,7 @@ class InventoryAnalytics:
                         break
                     yield batch
 
-            # Using an intermediate iterator variable prevents Black from wrapping the loop line
+            # Using a variable prevents Black from wrapping the loop line
             sales_iterator = sales_qs.iterator(chunk_size=chunk_size)
             for batch in batch_iterator(sales_iterator, chunk_size):
                 chunk_df = pd.DataFrame(
