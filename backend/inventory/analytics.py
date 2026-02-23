@@ -293,10 +293,12 @@ class InventoryAnalytics:
                     yield batch
 
             for batch in batch_iterator(
-                sales_qs.iterator(chunk_size=chunk_size), chunk_size
+                sales_qs.iterator(chunk_size=chunk_size),
+                chunk_size,
             ):
                 chunk_df = pd.DataFrame(
-                    batch, columns=["sale_date", "total_price", "quantity"]
+                    batch,
+                    columns=["sale_date", "total_price", "quantity"],
                 )
                 chunk_df["date"] = pd.to_datetime(chunk_df["sale_date"]).dt.normalize()
 
