@@ -5,7 +5,6 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from inventory.models import Product
 from .forecasting_engine import ForecastingEngine
-from .models import ForecastResult, ModelAccuracy
 from .tasks import batch_forecast_task
 from celery.result import AsyncResult
 
@@ -43,31 +42,7 @@ class AdvancedForecastAPI(APIView):
             )
 
         # Save Results
-        forecast_data = result["forecast"]
-        for item in forecast_data:
-            ForecastResult.objects.update_or_create(
-                product=product,
-                forecast_date=item["date"],
-                defaults={
-                    "predicted_value": item["value"],
-                    "confidence_lower": item["lower"],
-                    "confidence_upper": item["upper"],
-                    "model_used": result["model_used"],
-                },
-            )
-
-        # Save Metrics
-        metrics = result["metrics"]
-        ModelAccuracy.objects.update_or_create(
-            product=product,
-            model_name=result["model_used"],
-            defaults={
-                "r2_score": metrics["r2"],
-                "mae": metrics["mae"],
-                "mape": metrics["mape"],
-                "sample_size": characteristics.get("days_count", 0),
-            },
-        )
+        engine.save_forecast(product, result, characteristics)
 
         return Response(
             {
@@ -75,8 +50,8 @@ class AdvancedForecastAPI(APIView):
                 "product_name": product.name,
                 "model_used": result["model_used"],
                 "reason": result["reason"],
-                "forecast": forecast_data,
-                "metrics": metrics,
+                "forecast": result["forecast"],
+                "metrics": result["metrics"],
                 "data_characteristics": characteristics,
             }
         )
