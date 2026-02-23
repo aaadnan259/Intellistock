@@ -11,6 +11,7 @@ from django.utils import timezone
 from datetime import timedelta
 import pandas as pd
 import numpy as np
+import itertools
 from .models import Product, Sale
 
 
@@ -272,7 +273,7 @@ class InventoryAnalytics:
         start_date = timezone.now().date() - timedelta(days=days)
 
         if connection.vendor == "sqlite":
-            sales_qs = Sale.objects.filter(sale_date__gte=start_date).values(
+            sales_qs = Sale.objects.filter(sale_date__gte=start_date).values_list(
                 "sale_date",
                 "total_price",
                 "quantity",
@@ -280,11 +281,38 @@ class InventoryAnalytics:
             if not sales_qs.exists():
                 return self._get_empty_sales_trends_response()
 
-            df = pd.DataFrame(list(sales_qs))
-            df["date"] = pd.to_datetime(df["sale_date"]).dt.normalize()
+            # Process in chunks to avoid O(N) memory usage
+            chunk_size = 5000
+            aggregated_dfs = []
+
+            def batch_iterator(iterator, size):
+                while True:
+                    batch = list(itertools.islice(iterator, size))
+                    if not batch:
+                        break
+                    yield batch
+
+            for batch in batch_iterator(sales_qs.iterator(chunk_size=chunk_size), chunk_size):
+                chunk_df = pd.DataFrame(
+                    batch, columns=["sale_date", "total_price", "quantity"]
+                )
+                chunk_df["date"] = pd.to_datetime(chunk_df["sale_date"]).dt.normalize()
+
+                # Pre-aggregate chunk
+                agg_chunk = (
+                    chunk_df.groupby("date", as_index=False)
+                    .agg(total=("total_price", "sum"), units=("quantity", "sum"))
+                )
+                aggregated_dfs.append(agg_chunk)
+
+            if not aggregated_dfs:
+                return self._get_empty_sales_trends_response()
+
+            # Combine and final aggregation
+            df = pd.concat(aggregated_dfs)
             df = (
                 df.groupby("date", as_index=False)
-                .agg(total=("total_price", "sum"), units=("quantity", "sum"))
+                .agg(total=("total", "sum"), units=("units", "sum"))
                 .sort_values("date")
             )
         else:
