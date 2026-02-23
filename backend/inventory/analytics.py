@@ -292,7 +292,9 @@ class InventoryAnalytics:
                         break
                     yield batch
 
-            for batch in batch_iterator(sales_qs.iterator(chunk_size=chunk_size), chunk_size):
+            for batch in batch_iterator(
+                sales_qs.iterator(chunk_size=chunk_size), chunk_size
+            ):
                 chunk_df = pd.DataFrame(
                     batch, columns=["sale_date", "total_price", "quantity"]
                 )
