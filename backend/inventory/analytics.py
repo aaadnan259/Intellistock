@@ -261,6 +261,8 @@ class InventoryAnalytics:
             "moving_average": [],
             "trend": "insufficient_data",
             "trend_slope": 0,
+            "period_total": 0,
+            "period_avg": 0,
         }
 
     def calculate_sales_trends(self, days=90):
