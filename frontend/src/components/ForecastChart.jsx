@@ -18,10 +18,6 @@ import LoadingSkeleton from './LoadingSkeleton';
  * { date: string, value: number, lower: number, upper: number }
  */
 const ForecastChart = ({ data, loading }) => {
-    if (loading) {
-        return <LoadingSkeleton variant="chart" className="h-[400px] w-full" />;
-    }
-
     // Transform data to support area chart for confidence band
     const chartData = useMemo(() => (data || []).map((item, index) => ({
         ...item,
@@ -35,6 +31,10 @@ const ForecastChart = ({ data, loading }) => {
         // Index for animation
         index
     })), [data]);
+
+    if (loading) {
+        return <LoadingSkeleton variant="chart" className="h-[400px] w-full" />;
+    }
 
     if (chartData.length === 0) {
         return (
