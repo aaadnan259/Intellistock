@@ -210,13 +210,13 @@ class TestSalesTrends:
             name="Single Sale Product",
             sku="SINGLE-001",
             price=Decimal("100.00"),
-            current_stock=100
+            current_stock=100,
         )
         Sale.objects.create(
             product=product,
             quantity=1,
             total_price=Decimal("100.00"),
-            sale_date=datetime.now().date()
+            sale_date=datetime.now().date(),
         )
 
         analytics = InventoryAnalytics()
@@ -224,9 +224,9 @@ class TestSalesTrends:
         with patch("django.db.connection.vendor", "sqlite"):
             result = analytics.calculate_sales_trends(days=7)
 
-        assert result["trend"] == "stable" # Slope 0 -> stable
+        assert result["trend"] == "stable"  # Slope 0 -> stable
         assert result["trend_slope"] == 0
-        assert len(result["daily_sales"]) > 0 # Resampling fills zeros
+        assert len(result["daily_sales"]) > 0  # Resampling fills zeros
 
     def test_sales_trends_sparse_data(self, db):
         """Test that sparse data is correctly resampled to fill missing dates with 0."""
@@ -234,13 +234,23 @@ class TestSalesTrends:
             name="Sparse Sales Product",
             sku="SPARSE-001",
             price=Decimal("10.00"),
-            current_stock=100
+            current_stock=100,
         )
 
         # Create sales on day 1 and day 5 (days 2, 3, 4 missing)
         base_date = datetime.now().date() - timedelta(days=10)
-        Sale.objects.create(product=product, quantity=1, total_price=Decimal("10.00"), sale_date=base_date)
-        Sale.objects.create(product=product, quantity=1, total_price=Decimal("10.00"), sale_date=base_date + timedelta(days=4))
+        Sale.objects.create(
+            product=product,
+            quantity=1,
+            total_price=Decimal("10.00"),
+            sale_date=base_date,
+        )
+        Sale.objects.create(
+            product=product,
+            quantity=1,
+            total_price=Decimal("10.00"),
+            sale_date=base_date + timedelta(days=4),
+        )
 
         analytics = InventoryAnalytics()
 
