@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     XAxis,
     YAxis,
@@ -23,7 +23,7 @@ const ForecastChart = ({ data, loading }) => {
     }
 
     // Transform data to support area chart for confidence band
-    const chartData = (data || []).map((item, index) => ({
+    const chartData = useMemo(() => (data || []).map((item, index) => ({
         ...item,
         // Format date for display
         displayDate: typeof item.date === 'string'
@@ -34,7 +34,7 @@ const ForecastChart = ({ data, loading }) => {
         confidenceBand: item.upper - item.lower,
         // Index for animation
         index
-    }));
+    })), [data]);
 
     if (chartData.length === 0) {
         return (
