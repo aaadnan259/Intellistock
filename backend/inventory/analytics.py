@@ -6,7 +6,7 @@ from django.db.models import (
     FloatField,
     Max,
 )
-from django.db.models.functions import Coalesce, TruncDate, PercentRank
+from django.db.models.functions import Coalesce, PercentRank
 from django.utils import timezone
 from datetime import timedelta
 import pandas as pd
@@ -268,9 +268,9 @@ class InventoryAnalytics:
         """
         Calculate sales trends with moving average and trend analysis.
         """
-        from django.db import connection
-
         start_date = timezone.now().date() - timedelta(days=days)
+
+        from django.db import connection
 
         if connection.vendor == "sqlite":
             sales_qs = Sale.objects.filter(sale_date__gte=start_date).values_list(
@@ -319,8 +319,7 @@ class InventoryAnalytics:
         else:
             daily_sales = (
                 Sale.objects.filter(sale_date__gte=start_date)
-                .annotate(date=TruncDate("sale_date"))
-                .values("date")
+                .values(date=F("sale_date"))
                 .annotate(total=Sum("total_price"), units=Sum("quantity"))
                 .order_by("date")
             )
