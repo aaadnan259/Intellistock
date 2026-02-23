@@ -292,13 +292,11 @@ class InventoryAnalytics:
                         break
                     yield batch
 
-            for batch in batch_iterator(
-                sales_qs.iterator(chunk_size=chunk_size),
-                chunk_size,
-            ):
+            # Using an intermediate iterator variable prevents Black from wrapping the loop line
+            sales_iterator = sales_qs.iterator(chunk_size=chunk_size)
+            for batch in batch_iterator(sales_iterator, chunk_size):
                 chunk_df = pd.DataFrame(
-                    batch,
-                    columns=["sale_date", "total_price", "quantity"],
+                    batch, columns=["sale_date", "total_price", "quantity"]
                 )
                 chunk_df["date"] = pd.to_datetime(chunk_df["sale_date"]).dt.normalize()
 
