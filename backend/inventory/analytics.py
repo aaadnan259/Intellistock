@@ -267,43 +267,24 @@ class InventoryAnalytics:
         """
         Calculate sales trends with moving average and trend analysis.
         """
-        from django.db import connection
-
         start_date = timezone.now().date() - timedelta(days=days)
 
-        if connection.vendor == "sqlite":
-            sales_qs = Sale.objects.filter(sale_date__gte=start_date).values(
-                "sale_date",
-                "total_price",
-                "quantity",
-            )
-            if not sales_qs.exists():
-                return self._get_empty_sales_trends_response()
+        daily_sales = (
+            Sale.objects.filter(sale_date__gte=start_date)
+            .annotate(date=TruncDate("sale_date"))
+            .values("date")
+            .annotate(total=Sum("total_price"), units=Sum("quantity"))
+            .order_by("date")
+        )
 
-            df = pd.DataFrame(list(sales_qs))
-            df["date"] = pd.to_datetime(df["sale_date"]).dt.normalize()
-            df = (
-                df.groupby("date", as_index=False)
-                .agg(total=("total_price", "sum"), units=("quantity", "sum"))
-                .sort_values("date")
-            )
-        else:
-            daily_sales = (
-                Sale.objects.filter(sale_date__gte=start_date)
-                .annotate(date=TruncDate("sale_date"))
-                .values("date")
-                .annotate(total=Sum("total_price"), units=Sum("quantity"))
-                .order_by("date")
-            )
+        if not daily_sales:
+            return self._get_empty_sales_trends_response()
 
-            if not daily_sales:
-                return self._get_empty_sales_trends_response()
-
-            df = pd.DataFrame(list(daily_sales))
-            df["date"] = pd.to_datetime(df["date"])
-            df["total"] = df["total"].astype(float)
-            df["units"] = df["units"].astype(int)
-            df = df.sort_values("date")
+        df = pd.DataFrame(list(daily_sales))
+        df["date"] = pd.to_datetime(df["date"])
+        df["total"] = df["total"].astype(float)
+        df["units"] = df["units"].astype(int)
+        df = df.sort_values("date")
 
         if df.empty:
             return self._get_empty_sales_trends_response()
