@@ -301,9 +301,8 @@ class InventoryAnalytics:
                 chunk_df["date"] = pd.to_datetime(chunk_df["sale_date"]).dt.normalize()
 
                 # Pre-aggregate chunk
-                agg_chunk = (
-                    chunk_df.groupby("date", as_index=False)
-                    .agg(total=("total_price", "sum"), units=("quantity", "sum"))
+                agg_chunk = chunk_df.groupby("date", as_index=False).agg(
+                    total=("total_price", "sum"), units=("quantity", "sum")
                 )
                 aggregated_dfs.append(agg_chunk)
 
