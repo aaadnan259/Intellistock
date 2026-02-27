@@ -12,6 +12,7 @@ it's better than making users guess.
 import pandas as pd
 import numpy as np
 from datetime import timedelta
+from django.db import transaction
 from django.db.models import Sum
 from inventory.models import Sale
 from forecasting.models import ForecastResult, ModelAccuracy
@@ -493,17 +494,30 @@ class ForecastingEngine:
         """
         # Save Forecast Results
         forecast_data = result["forecast"]
-        for item in forecast_data:
-            ForecastResult.objects.update_or_create(
-                product=product,
-                forecast_date=item["date"],
-                defaults={
-                    "predicted_value": item["value"],
-                    "confidence_lower": item["lower"],
-                    "confidence_upper": item["upper"],
-                    "model_used": result["model_used"],
-                },
-            )
+        # De-duplicate forecast data by date (last one wins, as in previous loop)
+        forecast_map = {item["date"]: item for item in forecast_data}
+        forecast_dates = list(forecast_map.keys())
+
+        with transaction.atomic():
+            # Delete existing records for these dates to emulate update_or_create/avoid duplicates
+            ForecastResult.objects.filter(
+                product=product, forecast_date__in=forecast_dates
+            ).delete()
+
+            # Create new records in bulk - avoids N+1 write issues
+            forecast_objects = [
+                ForecastResult(
+                    product=product,
+                    forecast_date=item["date"],
+                    predicted_value=item["value"],
+                    confidence_lower=item["lower"],
+                    confidence_upper=item["upper"],
+                    model_used=result["model_used"],
+                )
+                for item in forecast_map.values()
+            ]
+            # Use batch_size for safe bulk operations
+            ForecastResult.objects.bulk_create(forecast_objects, batch_size=999)
 
         # Save Metrics
         metrics = result["metrics"]
